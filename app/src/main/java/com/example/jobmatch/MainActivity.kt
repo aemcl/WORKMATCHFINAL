@@ -99,9 +99,7 @@ class MainActivity : ComponentActivity() {
                 composable(Routes.employerForm) {
                     EmployerForm(navController)
                 }
-                composable(Routes.editProfile) {
-                    EditProfile(navController)
-                }
+
             })
         }
     }
