@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 
+// Role selection dropdown
 @Composable
 fun WhatAreYou(roleSelect: (String) -> Unit) {
     val roleOptions = listOf("Employee", "Employer")
@@ -27,14 +28,12 @@ fun WhatAreYou(roleSelect: (String) -> Unit) {
     )
 }
 
+// Security question dropdown
 @Composable
 fun SecurityQuestionDropdown(onQuestionSelect: (String) -> Unit) {
     val securityQuestions = listOf(
-        "What is your pet's name?",
-        "What is your mother's maiden name?",
-        "What is your first school's name?",
-        "What is your favorite book?",
-        "What is the name of your best friend?"
+        "Gwapo ba ka?",
+        "Kinsa imong Crush?"
     )
     DropdownMenuWithOptions(
         options = securityQuestions,
@@ -43,6 +42,7 @@ fun SecurityQuestionDropdown(onQuestionSelect: (String) -> Unit) {
     )
 }
 
+// Generic dropdown menu component
 @Composable
 fun DropdownMenuWithOptions(
     options: List<String>,
@@ -56,7 +56,9 @@ fun DropdownMenuWithOptions(
     val icon = if (isExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), // Padding around the dropdown
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp), // Padding around the dropdown
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // OutlinedTextField for selecting options
@@ -64,7 +66,7 @@ fun DropdownMenuWithOptions(
             value = selectedText,
             onValueChange = {},
             modifier = Modifier
-                .fillMaxWidth(0.72f) // 90% of the parent width for better spacing
+                .fillMaxWidth(0.72f) // 72% of the parent width for better spacing
                 .onGloballyPositioned { coordinates ->
                     textfieldSize = coordinates.size.toSize()
                 },
@@ -97,3 +99,4 @@ fun DropdownMenuWithOptions(
         }
     }
 }
+

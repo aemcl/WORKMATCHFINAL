@@ -71,7 +71,7 @@ fun EmployerCompanyProfile(navController: NavController){
         )
 
         Button(
-            onClick = { navController.navigate(Routes.jobtoOffer)
+            onClick = { navController.navigate(Routes.jobOffer)
             }
         ) {
             Text(text = ">")

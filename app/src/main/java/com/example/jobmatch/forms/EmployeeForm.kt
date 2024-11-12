@@ -1,203 +1,206 @@
+package com.example.jobmatch.forms
+
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.jobmatch.AppLogo
-import com.example.jobmatch.AppName
+import coil.compose.rememberImagePainter
 import com.example.jobmatch.Routes
-import java.util.Calendar
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 
 @Composable
 fun EmployeeForm(navController: NavController) {
-    var fname by remember { mutableStateOf("") }
-    var lname by remember { mutableStateOf("") }
+    var profilePicUri by remember { mutableStateOf<Uri?>(null) }
+    var fullName by remember { mutableStateOf("") }
     var dateOfBirth by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
-    var educationalAttainment by remember { mutableStateOf("") }
-    var skills by remember { mutableStateOf("") }
-    var selectedMonth by remember { mutableStateOf("Month") }
-    var selectedDay by remember { mutableStateOf("Day") }
-    var selectedYear by remember { mutableStateOf("Year") }
+    var phoneNumber by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var resumeUri by remember { mutableStateOf<Uri?>(null) }
 
-    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
+    val user = FirebaseAuth.getInstance().currentUser
+    val storage = FirebaseStorage.getInstance().reference
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { profilePicUri = it }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp)
+            .padding(16.dp)
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
-        AppLogo(200)
-        Spacer(modifier = Modifier.height(8.dp))
-        AppName(30)
-        Spacer(modifier = Modifier.height(5.dp))
-
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Provide the following information:",
-            fontSize = 16.sp,
+            text = "Employee Form",
+            fontSize = 24.sp,
+            color = Color.Black,
             fontStyle = FontStyle.Italic,
-            color = Color.Gray,
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
-        OutlinedTextField(
-            value = fname,
-            onValueChange = { fname = it },
-            shape = RoundedCornerShape(12.dp),
-            label = { Text(text = "First Name") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-        )
-
-        OutlinedTextField(
-            value = lname,
-            onValueChange = { lname = it },
-            shape = RoundedCornerShape(12.dp),
-            label = { Text(text = "Last Name") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-        )
-
-        // Date of Birth Dropdowns
-        Row(
+        // Profile Picture
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 7.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .size(120.dp)
+                .clip(CircleShape)
+                .background(Color.Blue)
+                .clickable { launcher.launch("image/*") },
+            contentAlignment = Alignment.Center
         ) {
-            DropdownMenuWithOptions(
-                label = "Month",
-                options = (1..12).map { it.toString().padStart(2, '0') },
-                selectedOption = selectedMonth,
-                onOptionSelect = { selectedMonth = it; updateDateOfBirth(selectedMonth, selectedDay, selectedYear) { dateOfBirth = it } }
-            )
-            DropdownMenuWithOptions(
-                label = "Day",
-                options = (1..31).map { it.toString().padStart(2, '0') },
-                selectedOption = selectedDay,
-                onOptionSelect = { selectedDay = it; updateDateOfBirth(selectedMonth, selectedDay, selectedYear) { dateOfBirth = it } }
-            )
-            DropdownMenuWithOptions(
-                label = "Year",
-                options = (1950..currentYear).map { it.toString() },
-                selectedOption = selectedYear,
-                onOptionSelect = { selectedYear = it; updateDateOfBirth(selectedMonth, selectedDay, selectedYear) { dateOfBirth = it } }
-            )
+            if (profilePicUri != null) {
+                Image(
+                    painter = rememberImagePainter(profilePicUri),
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Profile Placeholder",
+                    modifier = Modifier.size(120.dp),
+                    tint = Color.White
+                )
+            }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = fullName,
+            onValueChange = { fullName = it },
+            label = { Text(text = "Full Name") },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = dateOfBirth,
             onValueChange = { dateOfBirth = it },
-            label = { Text("Date of Birth") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            readOnly = true
+            label = { Text(text = "Date of Birth") },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = address,
             onValueChange = { address = it },
-            shape = RoundedCornerShape(12.dp),
             label = { Text(text = "Address") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = educationalAttainment,
-            onValueChange = { educationalAttainment = it },
+            value = phoneNumber,
+            onValueChange = { phoneNumber = it },
+            label = { Text(text = "Phone Number") },
             shape = RoundedCornerShape(12.dp),
-            label = { Text(text = "Educational Attainment") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = skills,
-            onValueChange = { skills = it },
+            value = description,
+            onValueChange = { description = it },
+            label = { Text(text = "Description") },
             shape = RoundedCornerShape(12.dp),
-            label = { Text(text = "Skills") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier.fillMaxWidth(),
+            maxLines = 5 // For multiline input
         )
-
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Button(
-            onClick = { navController.navigate(Routes.employeeMainScreen) },
+            onClick = {
+                if (fullName.isEmpty() || dateOfBirth.isEmpty() || address.isEmpty() ||
+                    phoneNumber.isEmpty() || description.isEmpty()
+                ) {
+                    Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                } else {
+                    user?.uid?.let { userId ->
+                        val employeeData = hashMapOf(
+                            "fullName" to fullName,
+                            "dateOfBirth" to dateOfBirth,
+                            "address" to address,
+                            "profilePicUri" to (profilePicUri?.toString() ?: ""),
+                            "description" to description,
+                            "phoneNumber" to phoneNumber,
+                            "resumeUri" to (resumeUri?.toString() ?: ""),
+                            "role" to "Employee"
+                        )
+
+                        profilePicUri?.let { uri ->
+                            val profilePicRef = storage.child("employee_profile_pics/$userId.jpg")
+                            profilePicRef.putFile(uri)
+                                .addOnSuccessListener {
+                                    profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                                        employeeData["profilePictureUrl"] = downloadUrl.toString()
+                                        saveEmployeeData(employeeData, userId, navController, context)
+                                    }
+                                }
+                                .addOnFailureListener {
+                                    saveEmployeeData(employeeData, userId, navController, context)
+                                }
+                        } ?: saveEmployeeData(employeeData, userId, navController, context)
+                    }
+                }
+            },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0XFFff8e2b)),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
-                .padding(horizontal = 32.dp)
+                .height(48.dp)
         ) {
-            Text(text = "Submit", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(text = "Submit", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
 
-        Spacer(modifier = Modifier.height(40.dp))
     }
 }
-
-@Composable
-fun DropdownMenuWithOptions(
-    label: String,
-    options: List<String>,
-    selectedOption: String,
-    onOptionSelect: (String) -> Unit
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-
-    Box {
-        OutlinedTextField(
-            value = selectedOption,
-            onValueChange = {},
-            modifier = Modifier
-                .width(100.dp)
-                .clickable { isExpanded = true },
-            label = { Text(text = label) },
-            readOnly = true,
-            trailingIcon = {
-                Icon(
-                    imageVector = if (isExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.clickable { isExpanded = !isExpanded }
-                )
-            }
-        )
-
-        DropdownMenu(
-            expanded = isExpanded,
-            onDismissRequest = { isExpanded = false }
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        onOptionSelect(option)
-                        isExpanded = false
-                    }
-                )
-            }
+fun saveEmployeeData(employeeData: HashMap<String, String>, userId: String, navController: NavController, context: android.content.Context) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("users").document(userId).set(employeeData)
+        .addOnSuccessListener {
+            markFormAsCompleted(userId, context)
+            navController.navigate(Routes.employeeMainScreen)
         }
-    }
+        .addOnFailureListener {
+            Toast.makeText(context, "Failed to save data. Try again.", Toast.LENGTH_SHORT).show()
+        }
 }
 
-// Function to update date of birth field from dropdown selections
-fun updateDateOfBirth(month: String, day: String, year: String, update: (String) -> Unit) {
-    if (month != "Month" && day != "Day" && year != "Year") {
-        update("$month/$day/$year")
-    }
-}
+

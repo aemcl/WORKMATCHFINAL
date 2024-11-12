@@ -24,19 +24,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun NewMessage(){
+fun NewMessage() {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-       //Top Bar
+        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp, top = 40.dp)
-        ){
-
+        ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back"
@@ -54,20 +53,22 @@ fun NewMessage(){
                 enabled = false
             )
         }
+
+        // Adjust the spacer height here
         Spacer(modifier = Modifier.weight(1f))
 
-        //Message box, input
+        // Message box, input
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp, bottom = 40.dp),
+                .padding(16.dp, bottom = 50.dp), // Reduced bottom padding
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val message = remember{ mutableStateOf("") }
+            val message = remember { mutableStateOf("") }
 
             BasicTextField(
                 value = message.value,
-                onValueChange = {message.value = it},
+                onValueChange = { message.value = it },
                 modifier = Modifier
                     .weight(1f)
                     .background(Color(0xFFEFEFEF))
@@ -77,7 +78,7 @@ fun NewMessage(){
                     color = Color.Black
                 ),
                 decorationBox = { innerTextField ->
-                    if (message.value.isEmpty()){
+                    if (message.value.isEmpty()) {
                         Text(
                             text = "Enter Message",
                             color = Color.Gray,
@@ -87,7 +88,9 @@ fun NewMessage(){
                     innerTextField()
                 }
             )
+
             Spacer(modifier = Modifier.width(8.dp))
+
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.Send,
                 contentDescription = "Send",

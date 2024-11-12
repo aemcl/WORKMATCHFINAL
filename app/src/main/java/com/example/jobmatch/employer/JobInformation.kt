@@ -68,7 +68,7 @@ fun JobInformation(navController: NavController){
 
         Spacer(modifier = Modifier.height(10.dp))
         Button(
-            onClick = { navController.navigate(Routes.jobcredentials) /*Log.i("Credential", "UserName:$UserName email:$email Password:$password")*/
+            onClick = { navController.navigate(Routes.jobCredentials) /*Log.i("Credential", "UserName:$UserName email:$email Password:$password")*/
             }
         ) {
             Text(text = "Submit")

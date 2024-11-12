@@ -3,14 +3,7 @@
 package com.example.jobmatch.employer.pages
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,39 +15,44 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.jobmatch.MainSearchBar
 import com.example.jobmatch.Routes
+import com.example.jobmatch.employer.EmployerSearch
 import com.example.jobmatch.employer.RecommendedWorkers
 
 @Composable
-fun EmployerHomePage( navController: NavController) {
+fun EmployerHomePage(navController: NavController, userRole: String) {
+    // Employer search bar with userRole parameter
+    EmployerSearch(navController = navController, userRole = userRole)
 
-    MainSearchBar(navController)
-    //List of Workers/Employee
+    // Recommended Workers and Add Job Button
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 100.dp),
+            .padding(top = 20.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Recommended workers list
         RecommendedWorkers()
 
-        //Add job button
+        // Add job button with label
         Box(modifier = Modifier.fillMaxSize()) {
             Icon(
                 imageVector = Icons.Default.AddCircle,
-                contentDescription = "Add",
+                contentDescription = "Add Job",
                 tint = Color(0XFFff8e2b),
                 modifier = Modifier
-                    .size(200.dp)
-                    .clickable { navController.navigate(Routes.workinformation) }
+                    .size(80.dp)
+                    .clickable { navController.navigate(Routes.workInformation) }
                     .align(Alignment.BottomEnd)
-                    .padding(start = 100.dp, bottom = 130.dp, end = 30.dp)
+                    .padding(end = 30.dp, bottom = 20.dp)
             )
             Text(
-                text = "Add Job", modifier = Modifier.align(Alignment.BottomEnd)
-                    .padding(start = 100.dp, bottom = 120.dp, end = 42.dp)
+                text = "Add Job",
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 42.dp, bottom = 10.dp),
+                color = Color(0xFFff8e2b)
             )
         }
     }

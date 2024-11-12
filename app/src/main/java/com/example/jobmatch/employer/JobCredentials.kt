@@ -84,7 +84,7 @@ fun JobCredentials(navController: NavController) {
 
             // Upload Button
             Button(
-                onClick = { navController.navigate(Routes.employerHome) },
+                onClick = { navController.navigate(Routes.employerMainScreen) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),

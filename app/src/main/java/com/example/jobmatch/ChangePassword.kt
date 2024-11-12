@@ -1,63 +1,85 @@
-package com.example.jobmatch
+package com.example.jobmatch.employee.pages
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import android.util.Log
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun ChangePassword(navController: NavController){
+fun ChangePassword(navController: NavController) {
+    val auth = FirebaseAuth.getInstance()
+    var currentPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
 
-    var newPassword by remember {
-        mutableStateOf("")
-    }
-
-    var confirmpass by remember {
-        mutableStateOf("")
-    }
-
-    Column (
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        OutlinedTextField(
-            value = newPassword,
-            onValueChange = {newPassword = it},
-            label = { Text(text = "New Password") })
+    ) {
+        Text("Change Password", style = MaterialTheme.typography.headlineSmall)
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = confirmpass,
-            onValueChange = {confirmpass = it},
-            label = { Text(text = "Confirm New Password") }
+        TextField(
+            value = currentPassword,
+            onValueChange = { currentPassword = it },
+            label = { Text("Current Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(20.dp))
+        TextField(
+            value = newPassword,
+            onValueChange = { newPassword = it },
+            label = { Text("New Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Button(onClick = { navController.navigate(Routes.login)},
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFAA300)),
-            modifier = Modifier
-                .width(280.dp)
-                .height(50.dp)
+        TextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Confirm New Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (errorMessage.isNotEmpty()) {
+            Text(errorMessage, color = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        Button(
+            onClick = {
+                if (newPassword != confirmPassword) {
+                    errorMessage = "Passwords do not match"
+                    return@Button
+                }
+                auth.currentUser?.updatePassword(newPassword)
+                    ?.addOnSuccessListener {
+                        Log.d("ChangePasswordScreen", "Password updated successfully")
+                        navController.navigateUp()  // Navigate back to the profile screen
+                    }
+                    ?.addOnFailureListener { e ->
+                        Log.e("ChangePasswordScreen", "Error updating password", e)
+                        errorMessage = "Error updating password"
+                    }
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Save", fontSize = 20.sp)
+            Text("Update Password")
         }
     }
 }
