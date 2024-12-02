@@ -1,5 +1,4 @@
 package com.example.jobmatch
-
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

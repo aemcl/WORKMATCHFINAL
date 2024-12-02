@@ -4,48 +4,69 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import java.util.UUID
 
 @Composable
 fun EditEmployeeProfile(navController: NavController) {
     val user = FirebaseAuth.getInstance().currentUser
     val db = FirebaseFirestore.getInstance()
     val storage = FirebaseStorage.getInstance()
-    val coroutineScope = rememberCoroutineScope()
 
     // State holders for fields
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
-    var bio by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
     var dateOfBirth by remember { mutableStateOf("") }
-    var resumeUri by remember { mutableStateOf<Uri?>(null) }
     var profilePicUri by remember { mutableStateOf<Uri?>(null) }
-
-    // Profile Picture and Resume Pickers
-    val profilePicPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        profilePicUri = uri
-    }
+    var resumeUri by remember { mutableStateOf<Uri?>(null) }
     val resumePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         resumeUri = uri
+        Log.d("EditEmployeeProfile", "Selected Resume URI: $resumeUri")
+
+    }
+
+    // Profile Picture Picker
+    val profilePicPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        profilePicUri = uri
+
     }
 
     // Load current data into fields
@@ -58,8 +79,10 @@ fun EditEmployeeProfile(navController: NavController) {
                         email = it.getString("email") ?: ""
                         address = it.getString("address") ?: ""
                         phoneNumber = it.getString("phoneNumber") ?: ""
-                        bio = it.getString("bio") ?: ""
+                        description = it.getString("description") ?: ""
                         dateOfBirth = it.getString("dateOfBirth") ?: ""
+                        profilePicUri = it.getString("profilePicUri")?.let { uriStr -> Uri.parse(uriStr) }
+                        resumeUri = it.getString("resumeUri")?.let { uriStr -> Uri.parse(uriStr) }
                     }
                 }
                 .addOnFailureListener { e ->
@@ -68,79 +91,125 @@ fun EditEmployeeProfile(navController: NavController) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Edit Employee Profile", fontSize = 20.sp, style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Profile Info Custom Text Fields
-        CustomTextField(value = fullName, onValueChange = { fullName = it }, label = "Full Name")
-        CustomTextField(value = email, onValueChange = { email = it }, label = "Email")
-        CustomTextField(value = address, onValueChange = { address = it }, label = "Address")
-        CustomTextField(value = phoneNumber, onValueChange = { phoneNumber = it }, label = "Phone Number")
-        CustomTextField(value = bio, onValueChange = { bio = it }, label = "Bio")
-        CustomTextField(value = dateOfBirth, onValueChange = { dateOfBirth = it }, label = "Date of Birth")
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Profile Picture Picker
-        Button(onClick = { profilePicPicker.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Select Profile Picture")
-        }
-
-        // Resume Picker
-        Button(onClick = { resumePicker.launch("application/pdf") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Select Resume (PDF)")
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Save button
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    user?.uid?.let { userId ->
-                        // Collect the updated profile info
-                        val updatedInfo = mutableMapOf(
-                            "fullName" to fullName,
-                            "email" to email,
-                            "address" to address,
-                            "phoneNumber" to phoneNumber,
-                            "bio" to bio,
-                            "dateOfBirth" to dateOfBirth
-                        )
-
-                        // Upload files if selected
-                        val profilePicUrl = profilePicUri?.let { uploadFile(storage, it, "profilePictures/$userId") }
-                        val resumeUrl = resumeUri?.let { uploadFile(storage, it, "resumes/$userId") }
-
-                        // Wait for the upload results
-                        profilePicUrl?.let { updatedInfo["profilePicture"] = it }
-                        resumeUrl?.let { updatedInfo["resumeUri"] = it }
-
-                        // Save the profile data in Firestore
-                        saveProfileData(db, userId, updatedInfo, navController)
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Save Changes")
-        }
+            Text(text = "Edit Employee Profile", fontSize = 24.sp, color = Color.Black)
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Button(onClick = { navController.navigate("changepass") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Change Password")
+            // Profile Picture
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clickable { profilePicPicker.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (profilePicUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(profilePicUri),
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier.size(120.dp).clip(CircleShape)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile Placeholder",
+                        modifier = Modifier.size(120.dp),
+                        tint = Color.Gray
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            CustomTextField(value = fullName, onValueChange = { fullName = it }, label = "Full Name")
+            CustomTextField(value = description, onValueChange = { description = it }, label = "Description")
+            CustomTextField(value = dateOfBirth, onValueChange = { dateOfBirth = it }, label = "Date of Birth")
+            CustomTextField(value = address, onValueChange = { address = it }, label = "Address")
+            CustomTextField(value = phoneNumber, onValueChange = { phoneNumber = it }, label = "Phone Number")
+            // Resume Upload
+            // Resume Upload
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .clip(MaterialTheme.shapes.medium) // Optional rounded corners
+                    .background(Color.Blue) // Blue background
+                    .clickable { resumePicker.launch("application/pdf") }
+                    .padding(16.dp), // Inner padding
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = resumeUri?.lastPathSegment ?: "Upload Resume", // Display file name or prompt
+                    color = Color.White, // White text for better contrast
+                    style = MaterialTheme.typography.bodyMedium // Updated for Material 3
+                )
+            }
+
+
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Save Button
+            Button(onClick = {
+                user?.uid?.let { userId ->
+                    val employeeInfo = hashMapOf(
+                        "fullName" to fullName,
+                        "address" to address,
+                        "phoneNumber" to phoneNumber,
+                        "description" to description,
+                        "dateOfBirth" to dateOfBirth,
+                    )
+                    resumeUri?.let { uri ->
+                        val resumeRef = storage.reference.child("employee_resumes/$userId.pdf")
+                        resumeRef.putFile(uri).addOnSuccessListener {
+                            resumeRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                                employeeInfo["resumeUri"] = downloadUrl.toString()
+                                saveEmployeeData(db, userId, employeeInfo, navController)
+                            }
+                        }.addOnFailureListener { e ->
+                            Log.e("EditEmployeeProfile", "Error uploading resume", e)
+                            saveEmployeeData(db, userId, employeeInfo, navController)
+                        }
+                    }
+
+                    profilePicUri?.let { uri ->
+                        val profilePicRef = storage.reference.child("employee_pics/$userId.jpg")
+                        profilePicRef.putFile(uri).addOnSuccessListener {
+                            profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                                employeeInfo["profilePicUri"] = downloadUrl.toString()
+                                saveEmployeeData(db, userId, employeeInfo, navController)
+                            }
+                        }.addOnFailureListener { e ->
+                            Log.e("EditEmployeeProfile", "Error uploading profile picture", e)
+                            saveEmployeeData(db, userId, employeeInfo, navController)
+                        }
+                    } ?: saveEmployeeData(db, userId, employeeInfo, navController)
+                }
+            }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                Text(text = "Save Changes")
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Cancel Button
+            Button(
+                onClick = { navController.navigateUp() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Text(text = "Cancel")
+            }
         }
     }
 }
 
 // Helper function to save profile data
-private fun saveProfileData(db: FirebaseFirestore, userId: String, updatedInfo: Map<String, Any>, navController: NavController) {
+fun saveEmployeeData(db: FirebaseFirestore, userId: String, updatedInfo: Map<String, Any>, navController: NavController) {
     db.collection("employees").document(userId)
         .update(updatedInfo)
         .addOnSuccessListener {
@@ -150,15 +219,6 @@ private fun saveProfileData(db: FirebaseFirestore, userId: String, updatedInfo: 
         .addOnFailureListener { e ->
             Log.e("EditEmployeeProfile", "Error updating profile", e)
         }
-}
-
-// Helper function to upload files to Firebase Storage
-private suspend fun uploadFile(storage: FirebaseStorage, uri: Uri, path: String): String? {
-    return withContext(Dispatchers.IO) {
-        val fileRef = storage.reference.child("$path/${UUID.randomUUID()}")
-        fileRef.putFile(uri).await()
-        fileRef.downloadUrl.await().toString()
-    }
 }
 
 // Custom TextField for reuse
@@ -177,3 +237,14 @@ fun CustomTextField(
             .fillMaxWidth()
     )
 }
+data class EmployeeProfileState(
+    var fullName: String = "",
+    var email: String = "",
+    var address: String = "",
+    var phoneNumber: String = "",
+    var description: String = "",
+    var dateOfBirth: String = "",
+    var profilePicUri: Uri? = null,
+    var resumeUri: Uri? = null
+)
+

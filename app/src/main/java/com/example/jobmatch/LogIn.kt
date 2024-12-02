@@ -1,6 +1,6 @@
 package com.example.jobmatch
-
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -37,6 +37,8 @@ fun LogIn(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
+    val userId = auth.currentUser?.uid
+    Log.d("FirebaseAuth", "User ID: $userId")
 
     // Load saved credentials on start
     LaunchedEffect(Unit) {
@@ -144,22 +146,36 @@ fun LogIn(navController: NavController) {
                                     if (userId != null) {
                                         firestore.collection("users").document(userId).get()
                                             .addOnSuccessListener { document ->
-                                                val role = document.getString("role")
-                                                val formCompleted = document.getBoolean("formCompleted") ?: false
-                                                if (role != null && formCompleted) {
-                                                    navigateBasedOnRole(role, navController)
+                                                if (document.exists()) {
+                                                    val role = document.getString("role")
+                                                    val formCompleted = document.getBoolean("formCompleted") ?: false
+                                                    if (role != null && formCompleted) {
+                                                        navigateBasedOnRole(role, navController)
+                                                    } else {
+                                                        Toast.makeText(context, "Role or form data incomplete", Toast.LENGTH_SHORT).show()
+                                                    }
                                                 } else {
-                                                    Toast.makeText(context, "Role or form data incomplete", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, "User document does not exist", Toast.LENGTH_SHORT).show()
                                                 }
                                             }
-                                            .addOnFailureListener {
-                                                Toast.makeText(context, "Error retrieving role. Try again.", Toast.LENGTH_SHORT).show()
+                                            .addOnFailureListener { e ->
+                                                Toast.makeText(context, "Error retrieving role: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                                             }
+
                                     }
                                 } else {
                                     Toast.makeText(context, "Invalid email or password", Toast.LENGTH_SHORT).show()
                                 }
                             }
+                        auth.signInWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Log.d("FirebaseAuth", "Login successful")
+                                } else {
+                                    Log.e("FirebaseAuth", "Error: ${task.exception?.message}")
+                                }
+                            }
+
                     }
                 }
             },
@@ -174,7 +190,7 @@ fun LogIn(navController: NavController) {
 }
 
 // Function to save credentials
-fun saveCredentials(context: Context, email: String, password: String, rememberMe: Boolean, ) {
+fun saveCredentials(context: Context, email: String, password: String, rememberMe: Boolean ) {
     val sharedPrefs = context.getSharedPreferences("credentials", Context.MODE_PRIVATE)
     with(sharedPrefs.edit()) {
         putString("email", email)

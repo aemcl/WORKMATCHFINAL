@@ -1,13 +1,9 @@
 package com.example.jobmatch
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack  // Correct import
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -17,16 +13,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun MainTopBar(pageTitle: String){
-    //Top Bar
+fun MainTopBar(pageTitle: String) {
+    // Top Bar
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp, top = 40.dp)
-    ){
-
+    ) {
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            imageVector = Icons.Filled.ArrowBack,  // Use the correct `Filled` reference
             contentDescription = "Back"
         )
 

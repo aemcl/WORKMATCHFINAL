@@ -4,11 +4,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,18 +20,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import com.example.jobmatch.NavItem
 import com.example.jobmatch.employer.pages.EmployerHomePage
-import com.example.jobmatch.employer.pages.EmployerMessagePage
-import com.example.jobmatch.employer.pages.EmployerNotificationPage
 import com.example.jobmatch.employer.pages.EmployerProfile
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmployerMainScreen(navController: NavController, userRole: String) {
 
     val navItemList = listOf(
         NavItem("Home", Icons.Default.Home, 0),
-        NavItem("Message", Icons.Default.Email, 5),
-        NavItem("Notification", Icons.Default.Notifications, 5),
         NavItem("Profile", Icons.Default.AccountCircle, 0)
     )
 
@@ -64,7 +60,7 @@ fun EmployerMainScreen(navController: NavController, userRole: String) {
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
             navController = navController,
-            userRole = userRole
+            employerId = userRole
         )
     }
 }
@@ -74,12 +70,10 @@ fun EmployerContentScreen(
     modifier: Modifier = Modifier,
     selectedIndex: Int,
     navController: NavController,
-    userRole: String
+    employerId: String
 ) {
     when (selectedIndex) {
-        0 -> EmployerHomePage(navController = navController, userRole = userRole)
-        1 -> EmployerMessagePage(navController)
-        2 -> EmployerNotificationPage()
-        3 -> EmployerProfile(navController)
+        0 -> EmployerHomePage(navController = navController, employerId = employerId)
+        1 -> EmployerProfile(navController)
     }
 }

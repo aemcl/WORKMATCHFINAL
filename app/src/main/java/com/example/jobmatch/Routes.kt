@@ -6,7 +6,6 @@ object Routes {
     const val logOut= "log out"
     const val forgotpass = "forgotpass"
     const val changepass = "changepass"
-    const val employeeSearch = "Employee search"
     const val employerSearch = "Employer search"
     const val signup = "signup"
     const val createProfile = "createProfile"
@@ -22,6 +21,7 @@ object Routes {
 
     const val jobOffer = "jobOffer"
     const val employeeHomePage = "employeeHome"
+    const val employerHomePage ="EmployerHome"
     const val jobDescription = "jobDescription"
     const val authentication = "authentication"
     const val employeeProfile = "Employee Profile"
@@ -29,5 +29,9 @@ object Routes {
     const val editEmployeeProfile = "Edit Employee Profile"
     const val editEmployerProfile = "Edit Employer Profile"
     fun jobDescription(jobDetails: String) = "jobDescription/$jobDetails"
+    const val addJob ="Add Job"
+    const val jobInfo="Job Information"
+    const val employeeAccount = "employeeAccount/{employeeId}"
+    var recommendedJobs ="Recommended Job"
 
 }

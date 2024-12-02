@@ -4,11 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -22,28 +18,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.example.jobmatch.employee.pages.EmployeeHomePage
-import com.example.jobmatch.employee.pages.EmployeeMessagePage
-import com.example.jobmatch.employee.pages.EmployeeNotificationPage
 import com.example.jobmatch.employee.pages.EmployeeProfile
-import com.example.jobmatch.employer.NavItem
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.jobmatch.NavItem
 
+//sa navigation ni para mo display
 @Composable
-fun EmployeeMainScreen(navController: NavController, userRole: String) {
+fun EmployeeMainScreen(navController: NavController, userRole: String, userId: String) {
 
     val navItemList = listOf(
         NavItem("Home", Icons.Default.Home, 0),
-        NavItem("Message", Icons.Default.Email, 5),
-        NavItem("Notification", Icons.Default.Notifications, 5),
         NavItem("Profile", Icons.Default.AccountCircle, 0)
     )
 
     var selectedIndex by remember {
         mutableIntStateOf(0)
     }
-
-    val userRole = "employee" // Define the user role here or fetch it dynamically if needed
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -53,14 +42,7 @@ fun EmployeeMainScreen(navController: NavController, userRole: String) {
                         selected = selectedIndex == index,
                         onClick = { selectedIndex = index },
                         icon = {
-                            BadgedBox(badge = {
-                                if (navItem.badgeCount > 0)
-                                    Badge {
-                                        Text(text = navItem.badgeCount.toString())
-                                    }
-                            }) {
                                 Icon(imageVector = navItem.icon, contentDescription = "Icon")
-                            }
                         },
                         label = {
                             Text(text = navItem.label)
@@ -74,7 +56,8 @@ fun EmployeeMainScreen(navController: NavController, userRole: String) {
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
             navController = navController,
-            userRole = userRole
+            userRole = userRole,
+            userId = userId
         )
     }
 }
@@ -84,12 +67,11 @@ fun EmployeeContentScreen(
     modifier: Modifier = Modifier,
     selectedIndex: Int,
     navController: NavController,
-    userRole: String
+    userRole: String,
+    userId: String
 ) {
     when (selectedIndex) {
-        0 -> EmployeeHomePage(navController = navController, userRole = userRole)
-        1 -> EmployeeMessagePage(navController)
-        2 -> EmployeeNotificationPage()
-        3 -> EmployeeProfile(navController)
+        0 -> EmployeeHomePage(navController, userId)
+        1 -> EmployeeProfile(navController)
     }
 }

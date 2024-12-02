@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        mavenCentral() // Retrofit is hosted here
         google {
             content {
                 includeGroupByRegex("com\\.android.*")

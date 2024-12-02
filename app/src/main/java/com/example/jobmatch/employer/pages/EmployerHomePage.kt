@@ -2,58 +2,332 @@
 
 package com.example.jobmatch.employer.pages
 
+import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
+import com.example.jobmatch.R
 import com.example.jobmatch.Routes
-import com.example.jobmatch.employer.EmployerSearch
-import com.example.jobmatch.employer.RecommendedWorkers
+import com.example.jobmatch.employer.RecommendedWorkersScreen
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.toObject
+
+// Data class for Employee
+
 
 @Composable
-fun EmployerHomePage(navController: NavController, userRole: String) {
-    // Employer search bar with userRole parameter
-    EmployerSearch(navController = navController, userRole = userRole)
+fun EmployerHomePage(navController: NavController, employerId: String) {
+    val db = FirebaseFirestore.getInstance()
+    val searchText = remember { mutableStateOf("") }
+    val recommendedEmployees = remember { mutableStateOf<List<Employee>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Recommended Workers and Add Job Button
-    Column(
+    // Fetch employee data from Firestore
+    LaunchedEffect(Unit) {
+        db.collection("employees")
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                val employees = querySnapshot.documents.mapNotNull { it.toObject<Employee>() }
+                recommendedEmployees.value = employees
+                isLoading = false
+            }
+            .addOnFailureListener { e ->
+                Log.e("FirestoreError", "Error fetching employees: ", e)
+                errorMessage = "Error fetching employee data."
+                isLoading = false
+            }
+    }
+
+    // UI rendering
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
+        // Search bar
+        OutlinedTextField(
+            value = searchText.value,
+            onValueChange = { searchText.value = it },
+            label = { Text("Search Employee") },
+            leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Search Icon") },
+            trailingIcon = {
+                if (searchText.value.isNotEmpty()) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear Text",
+                        modifier = Modifier.clickable { searchText.value = "" }
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Recommended Employees",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        RecommendedWorkersScreen(navController, employerId)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "All Employees",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // Show loading indicator while fetching data
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage!!,
+                    color = Color.Red,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            } else {
+                // Filter employees based on search text
+                val filteredEmployees = recommendedEmployees.value.filter {
+                    it.fullName.contains(searchText.value, ignoreCase = true)
+                }
+
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(filteredEmployees) { employee ->
+                        EmployeeCard(employee) { selectedEmployeeId ->
+                            // Navigate to EmployeeProfileScreen with employeeId
+                            navController.navigate("employeeProfile/${employee.fullName}")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Floating Action Button (FAB) for adding a job
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 20.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(end = 40.dp, bottom = 120.dp),
+        contentAlignment = Alignment.BottomEnd
     ) {
-        // Recommended workers list
-        RecommendedWorkers()
-
-        // Add job button with label
-        Box(modifier = Modifier.fillMaxSize()) {
+        FloatingActionButton(
+            onClick = { navController.navigate(Routes.addJob) },
+            containerColor = Color(0xFF007bff)
+        ) {
             Icon(
-                imageVector = Icons.Default.AddCircle,
+                imageVector = Icons.Default.Add,
                 contentDescription = "Add Job",
-                tint = Color(0XFFff8e2b),
-                modifier = Modifier
-                    .size(80.dp)
-                    .clickable { navController.navigate(Routes.workInformation) }
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 30.dp, bottom = 20.dp)
-            )
-            Text(
-                text = "Add Job",
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 42.dp, bottom = 10.dp),
-                color = Color(0xFFff8e2b)
+                tint = Color.White
             )
         }
     }
 }
+
+@Composable
+fun EmployeeCard(employee: Employee, onClick: (String) -> Unit) {
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable { onClick(employee.fullName) }, // Use employee.fullName or actual ID
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Profile Picture
+            if (employee.profilePicUri.isNotEmpty()) {
+                Image(
+                    painter = rememberAsyncImagePainter(employee.profilePicUri),
+                    contentDescription = "Profile Picture of ${employee.fullName}",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(Color(0xFFD4C4FB), shape = CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                // Fallback to a default image
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Default Profile Picture",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(Color(0xFFD4C4FB), shape = CircleShape)
+                        .padding(8.dp), // Adjust padding to ensure the icon fits well inside the background
+                    tint = Color.White // Change the color of the icon (optional)
+                )
+
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Employee Details
+            Column {
+                Text(text = employee.fullName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = employee.description, fontSize = 14.sp, color = Color.Gray)
+            }
+        }
+    }
+}
+
+
+@Composable
+fun EmployeeProfileScreen(navController: NavController, employeeId: String) {
+    val db = FirebaseFirestore.getInstance()
+    var employee by remember { mutableStateOf<Employee?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // Fetch employee details from Firestore based on the passed employeeId
+    LaunchedEffect(employeeId) {
+        db.collection("employees").whereEqualTo("fullName", employeeId).get()
+            .addOnSuccessListener { result ->
+                val doc = result.documents.firstOrNull()
+                employee = doc?.toObject<Employee>()
+                isLoading = false
+            }
+            .addOnFailureListener {
+                isLoading = false
+                // Handle error (e.g., show a toast or error message)
+            }
+    }
+
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else if (employee != null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .background(Color(0xFFF9F9F9)) // Background color for the profile
+        ) {
+            // Profile Picture with a clickable image for enlarged view
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(8.dp)
+            ) {
+                val painter = rememberAsyncImagePainter(employee!!.profilePicUri.ifEmpty { R.drawable.gambe })
+                Image(
+                    painter = painter,
+                    contentDescription = "Profile Picture of ${employee!!.fullName}",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.Gray, CircleShape)
+                        .clickable {
+                            // Navigate to EmployeeDetailScreen and pass employee details
+                            navController.navigate("employee_detail_screen/${employee!!.fullName}")
+                        },
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Name and Description section
+            Text(
+                text = employee!!.fullName,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = employee!!.description,
+                fontSize = 16.sp,
+                color = Color.Gray,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Additional Information Section
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Address
+                Text(text = "Address:", fontWeight = FontWeight.Bold)
+                Text(text = employee!!.address, color = Color.Gray)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Date of Birth
+                Text(text = "Date of Birth:", fontWeight = FontWeight.Bold)
+                Text(text = employee!!.dateOfBirth, color = Color.Gray)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Phone Number
+                Text(text = "Phone Number:", fontWeight = FontWeight.Bold)
+                Text(text = employee!!.phoneNumber, color = Color.Gray)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Resume Link
+                Text(text = "Resume:", fontWeight = FontWeight.Bold)
+                Text(
+                    text = employee!!.resumeUri.ifEmpty { "No resume uploaded" },
+                    color = Color.Gray,
+                    modifier = Modifier.clickable {
+                        // Open resume URL if available (or handle case where not available)
+                        if (employee!!.resumeUri.isNotEmpty()) {
+                            // Add logic to open the resume URI in a browser or other app
+                        }
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Back button
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+        }
+    }
+}
+
+
+// Updated Employee data class
+data class Employee(
+    val fullName: String = "",
+    val description: String = "",
+    val profilePicUri: String = "",
+    val address: String = "",
+    val dateOfBirth: String = "",
+    val phoneNumber: String = "",
+    val resumeUri: String = ""
+)
+

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
 import com.example.jobmatch.Routes
 import com.google.firebase.auth.FirebaseAuth
@@ -76,7 +77,7 @@ fun EmployerForm(navController: NavController) {
         ) {
             if (profilePictureUri != null) {
                 Image(
-                    painter = rememberImagePainter(profilePictureUri),
+                    painter = rememberAsyncImagePainter(profilePictureUri),
                     contentDescription = "Profile Picture",
                     modifier = Modifier
                         .size(120.dp)
@@ -172,7 +173,7 @@ fun EmployerForm(navController: NavController) {
 
 fun saveEmployerData(employerData: HashMap<String, String>, userId: String, navController: NavController, context: android.content.Context) {
     val db = FirebaseFirestore.getInstance()
-    db.collection("users").document(userId).set(employerData)
+    db.collection("employers").document(userId).set(employerData)
         .addOnSuccessListener {
             markFormAsCompleted(userId, context)
             navController.navigate(Routes.employerMainScreen)
@@ -184,7 +185,7 @@ fun saveEmployerData(employerData: HashMap<String, String>, userId: String, navC
 
 fun markFormAsCompleted(userId: String, context: android.content.Context) {
     val firestore = FirebaseFirestore.getInstance()
-    firestore.collection("users").document(userId).update("formCompleted", true)
+    firestore.collection("employers").document(userId).update("formCompleted", true)
         .addOnSuccessListener {
             Toast.makeText(context, "Form completed successfully", Toast.LENGTH_SHORT).show()
         }

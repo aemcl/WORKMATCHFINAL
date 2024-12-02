@@ -15,9 +15,9 @@ fun LogOut(navController: NavController) {
     // Clear locally stored user credentials if necessary
     clearLocalCredentials(navController.context)
 
-    // Redirect to the login screen after logout
+    // Ensure back stack is cleared and user cannot navigate back to authenticated screens
     navController.navigate(Routes.login) {
-        popUpTo(Routes.employeeMainScreen) { inclusive = true }
+        popUpTo(Routes.employeeMainScreen) { inclusive = true }  // Clear entire back stack
     }
 }
 

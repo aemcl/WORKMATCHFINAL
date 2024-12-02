@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -55,4 +56,23 @@ fun Welcome(navController: NavController){
         }
          Spacer(modifier = Modifier.height(100.dp))
     }
+}
+
+@Composable
+fun AppName(nameSize: Int){
+
+    Text(
+        text = "Work Match",
+        fontSize = nameSize.sp,
+        fontWeight = FontWeight.ExtraBold,
+    )
+}
+
+@Composable
+fun AppLogo(imageSize: Int){
+    Image(
+        painter = painterResource(id = R.drawable.logo),
+        contentDescription = "Logo",
+        modifier = Modifier.size(imageSize.dp)
+    )
 }

@@ -1,11 +1,11 @@
 package com.example.jobmatch
 
-import androidx.compose.ui.semantics.Role
+import android.util.Log
+import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import androidx.navigation.NavController
 
 class Authentication {
 
@@ -64,8 +64,13 @@ class Authentication {
 
     // Get Current User
     fun getCurrentUser(): FirebaseUser? {
-        return auth.currentUser
+        val user = auth.currentUser
+        if (user == null) {
+            Log.d("Auth", "No authenticated user found.")
+        }
+        return user
     }
+
 
     // Get User Role from Firestore
     suspend fun getUserRole(userId: String): String? {

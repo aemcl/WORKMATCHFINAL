@@ -2,13 +2,17 @@
 
 package com.example.jobmatch
 
+import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,48 +21,62 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
-import com.example.jobmatch.employer.NavItem
-import com.example.jobmatch.employer.pages.EmployerHomePage
-import com.example.jobmatch.employer.pages.EmployerMessagePage
-import com.example.jobmatch.employer.pages.EmployerNotificationPage
-import com.example.jobmatch.employer.pages.EmployerProfile
+
 
 @Composable
 fun BottomBar(navController: NavController, userRole: String) {
     val navItemList = listOf(
         NavItem("Home", Icons.Default.Home, 0),
-        NavItem("Message", Icons.Default.Email, 5),
-        NavItem("Notification", Icons.Default.Notifications, 5),
         NavItem("Profile", Icons.Default.AccountCircle, 0)
     )
 
     var selectedIndex by remember { mutableIntStateOf(0) }
+    var bottomBarVisible by remember { mutableStateOf(true) }
+
+    // Scroll behavior for BottomBar visibility
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         bottomBar = {
-            NavigationBar {
-                navItemList.forEachIndexed { index, navItem ->
-                    NavigationBarItem(
-                        selected = selectedIndex == index,
-                        onClick = { selectedIndex = index },
-                        icon = {
-                            BadgedBox(badge = {
-                                if (navItem.badgeCount > 0)
-                                    Badge { Text(text = navItem.badgeCount.toString()) }
-                            }) {
-                                Icon(imageVector = navItem.icon, contentDescription = "Icon")
-                            }
-                        },
-                        label = { Text(text = navItem.label) }
-                    )
+            if (bottomBarVisible) {
+                NavigationBar(
+                    modifier = Modifier
+                        .height(56.dp)
+                        .zIndex(1f),
+                ) {
+                    navItemList.forEachIndexed { index, navItem ->
+                        NavigationBarItem(
+                            selected = selectedIndex == index,
+                            onClick = { selectedIndex = index },
+                            icon = {
+                                BadgedBox(badge = {
+                                    if (navItem.badgeCount > 0)
+                                        Badge { Text(text = navItem.badgeCount.toString()) }
+                                }) {
+                                    Icon(imageVector = navItem.icon, contentDescription = navItem.label)
+                                }
+                            },
+                            label = { Text(text = navItem.label) }
+                        )
+                    }
                 }
             }
         }
@@ -67,22 +85,51 @@ fun BottomBar(navController: NavController, userRole: String) {
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
             navController = navController,
-            userRole = userRole
+            userRole = userRole,
+            onScroll = { isScrollingUp ->
+                // Update visibility based on scroll direction
+                bottomBarVisible = !isScrollingUp
+            }
         )
     }
 }
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun ContentScreen(
     modifier: Modifier = Modifier,
     selectedIndex: Int,
     navController: NavController,
-    userRole: String
+    userRole: String,
+    onScroll: (Boolean) -> Unit
 ) {
-    when (selectedIndex) {
-        0 -> EmployerHomePage(navController = navController, userRole = userRole)
-        1 -> EmployerMessagePage(navController)
-        2 -> EmployerNotificationPage()
-        3 -> EmployerProfile(navController)
+    val scrollState = rememberLazyListState()
+
+    // Track the scroll direction by comparing the scroll offset
+    val isScrollingUp by derivedStateOf {
+        val firstVisibleItemIndex = scrollState.firstVisibleItemIndex
+        val firstVisibleItemScrollOffset = scrollState.firstVisibleItemScrollOffset
+        firstVisibleItemIndex > 0 || firstVisibleItemScrollOffset > 0
+    }
+
+    // Call onScroll when scroll direction changes
+    LaunchedEffect(scrollState) {
+        snapshotFlow { isScrollingUp }.collect { onScroll(it) }
+    }
+
+    LazyColumn(
+        state = scrollState,
+        modifier = modifier,
+        contentPadding = PaddingValues(bottom = 56.dp), // Leave space for the bottom bar
+    ) {
+        items(50) { index ->
+            Text(
+                text = "Item $index",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
+        }
     }
 }
+

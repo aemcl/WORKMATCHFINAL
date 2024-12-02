@@ -1,14 +1,24 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.jobmatch
-
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -25,20 +35,6 @@ fun WhatAreYou(roleSelect: (String) -> Unit) {
         options = roleOptions,
         label = "What are you?",
         onOptionSelect = { roleSelect(it) }
-    )
-}
-
-// Security question dropdown
-@Composable
-fun SecurityQuestionDropdown(onQuestionSelect: (String) -> Unit) {
-    val securityQuestions = listOf(
-        "Gwapo ba ka?",
-        "Kinsa imong Crush?"
-    )
-    DropdownMenuWithOptions(
-        options = securityQuestions,
-        label = "Security Questions",
-        onOptionSelect = { onQuestionSelect(it) }
     )
 }
 
@@ -100,3 +96,17 @@ fun DropdownMenuWithOptions(
     }
 }
 
+
+// Security question dropdown
+@Composable
+fun SecurityQuestionDropdown(onQuestionSelect: (String) -> Unit) {
+    val securityQuestions = listOf(
+        "Gwapo ko di ay ?",
+        "Asa ka ?"
+    )
+    DropdownMenuWithOptions(
+        options = securityQuestions,
+        label = "Security Questions",
+        onOptionSelect = { onQuestionSelect(it) }
+    )
+}

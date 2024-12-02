@@ -10,15 +10,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
+
+data class EmployeeItem(
+    val name: String,
+    val description: String
+)
 
 @Composable
 fun EmployerSearch(navController: NavController, userRole: String) {
@@ -29,7 +31,7 @@ fun EmployerSearch(navController: NavController, userRole: String) {
     val db = FirebaseFirestore.getInstance()
 
     // List to hold employee profiles from Firestore
-    val employeeItems = remember { mutableStateListOf<String>() }
+    val employeeItems = remember { mutableStateListOf<EmployeeItem>() }
 
     // Fetch employees from Firestore
     LaunchedEffect(Unit) {
@@ -38,13 +40,14 @@ fun EmployerSearch(navController: NavController, userRole: String) {
                 employeeItems.clear()
                 for (document in result) {
                     val employeeName = document.getString("name") ?: ""
+                    val employeeDescription = document.getString("description") ?: ""
                     if (employeeName.isNotEmpty()) {
-                        employeeItems.add(employeeName)
+                        employeeItems.add(EmployeeItem(employeeName, employeeDescription))
                     }
                 }
             }
             .addOnFailureListener { exception ->
-                // Handle errors
+                // Handle errors (Log or display an error message)
             }
     }
 
@@ -53,8 +56,7 @@ fun EmployerSearch(navController: NavController, userRole: String) {
         query = text,
         onQueryChange = { text = it },
         onSearch = {
-            // Handle search action
-            active = false
+            active = false  // Close the search bar
         },
         active = active,
         onActiveChange = { active = it },
@@ -67,29 +69,32 @@ fun EmployerSearch(navController: NavController, userRole: String) {
                     contentDescription = "Close Icon",
                     modifier = Modifier.clickable {
                         if (text.isNotEmpty()) {
-                            text = ""
+                            text = ""  // Clear the search text
                         } else {
-                            active = false
+                            active = false  // Close the search bar
                         }
                     }
                 )
             }
         }
     ) {
-        // Display employee suggestions based on search
-        employeeItems.filter { it.contains(text, ignoreCase = true) }.forEach { suggestion ->
+        // Display employee suggestions based on search in both name and description
+        employeeItems.filter {
+            it.name.contains(text, ignoreCase = true) ||
+                    it.description.contains(text, ignoreCase = true)
+        }.forEach { suggestion ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(14.dp)
                     .clickable {
                         // Navigate to the employee's profile screen
-                        navController.navigate("employeeProfile/$suggestion") // Replace with actual route
+                        navController.navigate("employeeProfile/${suggestion.name}") // Replace with actual route
                     }
             ) {
                 Icon(imageVector = Icons.Default.History, contentDescription = "History Icon")
                 Text(
-                    text = suggestion,
+                    text = suggestion.name,
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }

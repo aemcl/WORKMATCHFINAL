@@ -7,15 +7,30 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,7 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.rememberImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.example.jobmatch.Routes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -47,8 +62,14 @@ fun EmployeeForm(navController: NavController) {
     val user = FirebaseAuth.getInstance().currentUser
     val storage = FirebaseStorage.getInstance().reference
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    // Launcher for profile picture
+    val profilePicLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { profilePicUri = it }
+    }
+
+    // Launcher for resume
+    val resumeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { resumeUri = it }
     }
 
     Column(
@@ -73,12 +94,12 @@ fun EmployeeForm(navController: NavController) {
                 .size(120.dp)
                 .clip(CircleShape)
                 .background(Color.Blue)
-                .clickable { launcher.launch("image/*") },
+                .clickable { profilePicLauncher.launch("image/*") },
             contentAlignment = Alignment.Center
         ) {
             if (profilePicUri != null) {
                 Image(
-                    painter = rememberImagePainter(profilePicUri),
+                    painter = rememberAsyncImagePainter(profilePicUri),
                     contentDescription = "Profile Picture",
                     modifier = Modifier
                         .size(120.dp)
@@ -139,11 +160,42 @@ fun EmployeeForm(navController: NavController) {
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text(text = "Description") },
+            label = { Text(text = "Skills") },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             maxLines = 5 // For multiline input
         )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Resume Section
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(text = "Resume")
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Show the selected resume URI or a placeholder
+            if (resumeUri != null) {
+                Text(
+                    text = "Selected Resume: ${resumeUri.toString()}",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            } else {
+                Text(text = "No resume uploaded yet.", color = Color.Gray, fontSize = 14.sp)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { resumeLauncher.launch("application/pdf") }, // Allow only PDF files
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Choose Resume")
+            }
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(
@@ -155,29 +207,18 @@ fun EmployeeForm(navController: NavController) {
                 } else {
                     user?.uid?.let { userId ->
                         val employeeData = hashMapOf(
+                            "profilePicUri" to (profilePicUri?.toString() ?: ""),
                             "fullName" to fullName,
+                            "description" to description,
                             "dateOfBirth" to dateOfBirth,
                             "address" to address,
-                            "profilePicUri" to (profilePicUri?.toString() ?: ""),
-                            "description" to description,
                             "phoneNumber" to phoneNumber,
                             "resumeUri" to (resumeUri?.toString() ?: ""),
                             "role" to "Employee"
                         )
 
-                        profilePicUri?.let { uri ->
-                            val profilePicRef = storage.child("employee_profile_pics/$userId.jpg")
-                            profilePicRef.putFile(uri)
-                                .addOnSuccessListener {
-                                    profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                                        employeeData["profilePictureUrl"] = downloadUrl.toString()
-                                        saveEmployeeData(employeeData, userId, navController, context)
-                                    }
-                                }
-                                .addOnFailureListener {
-                                    saveEmployeeData(employeeData, userId, navController, context)
-                                }
-                        } ?: saveEmployeeData(employeeData, userId, navController, context)
+                        // Upload data and handle result
+                        saveEmployeeData(employeeData, userId, navController, context)
                     }
                 }
             },
@@ -188,18 +229,28 @@ fun EmployeeForm(navController: NavController) {
         ) {
             Text(text = "Submit", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
-
     }
 }
+
 fun saveEmployeeData(employeeData: HashMap<String, String>, userId: String, navController: NavController, context: android.content.Context) {
     val db = FirebaseFirestore.getInstance()
-    db.collection("users").document(userId).set(employeeData)
+    db.collection("employees").document(userId).set(employeeData)
         .addOnSuccessListener {
-            markFormAsCompleted(userId, context)
+            markFormCompleted(userId, context)
             navController.navigate(Routes.employeeMainScreen)
         }
         .addOnFailureListener {
             Toast.makeText(context, "Failed to save data. Try again.", Toast.LENGTH_SHORT).show()
+        }
+}
+fun markFormCompleted(userId: String, context: android.content.Context) {
+    val firestore = FirebaseFirestore.getInstance()
+    firestore.collection("employees").document(userId).update("formCompleted", true)
+        .addOnSuccessListener {
+            Toast.makeText(context, "Form completed successfully", Toast.LENGTH_SHORT).show()
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Failed to mark form as completed. Try again.", Toast.LENGTH_SHORT).show()
         }
 }
 
