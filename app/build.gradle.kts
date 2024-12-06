@@ -84,6 +84,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.0")
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.0")
     implementation ("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
-
+    implementation ("com.google.accompanist:accompanist-pager:0.27.0")
+    implementation ("com.google.accompanist:accompanist-pager-indicators:0.27.0")
 
 }

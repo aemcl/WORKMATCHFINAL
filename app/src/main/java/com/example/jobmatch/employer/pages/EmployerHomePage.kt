@@ -35,7 +35,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.jobmatch.Routes
-import com.example.jobmatch.employer.RecommendedWorkersScreen
+import com.example.jobmatch.employer.RecommendedWorkers
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
 
@@ -101,7 +101,7 @@ fun EmployerHomePage(navController: NavController, employerId: String) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        RecommendedWorkersScreen(navController, employerId)
+        RecommendedWorkers(navController, employerId)
         Spacer(modifier = Modifier.height(16.dp))
 
 

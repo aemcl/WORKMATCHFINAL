@@ -1,3 +1,6 @@
+
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +50,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun JobDescription(navController: NavController, jobName: String) {
     val db = FirebaseFirestore.getInstance()
     var job by remember { mutableStateOf<Job?>(null) }
-
+    val context = LocalContext.current
     // Fetch job details using the jobName passed in the navigation
     LaunchedEffect(jobName) {
         val jobRepository = JobRepository()
@@ -62,7 +67,6 @@ fun JobDescription(navController: NavController, jobName: String) {
                             imageVector = Icons.Filled.ArrowBack,  // Use this instead
                             contentDescription = "Back"
                         )
-
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -97,50 +101,102 @@ fun JobDescription(navController: NavController, jobName: String) {
                             // Job Title
                             Text(
                                 text = jobDetails.jobName,
-                                style = MaterialTheme.typography.headlineMedium,
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold, // Make the text bold
+                                    fontSize = 30.sp // Adjust the font size to make it bigger
+                                ),
                                 color = MaterialTheme.colorScheme.primary,
                                 textAlign = TextAlign.Center
                             )
+
                             // Job Details
                             Text(
                                 text = "Location: ${jobDetails.jobAddress}",
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 20.sp // Adjust the font size to make it bigger
+                                ),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+
                             Text(
                                 text = "Salary: ${jobDetails.jobSalary}",
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 20.sp // Adjusted font size to match Location text
+                                ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Divider(
                                 color = MaterialTheme.colorScheme.surface,
                                 thickness = 1.dp
                             )
+
                             // Job Description
                             Text(
-                                text = "Description",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
+                                text = "Required: ${jobDetails.jobDescription}",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 20.sp // Same font size as Location
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            // job workField
+                            // Job workField
                             Text(
-                                text = "Job WorkField",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
+                                text = "Work Field: ${jobDetails.companyWorkField}",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 20.sp // Same font size as Location
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Divider(
+                                color = MaterialTheme.colorScheme.surface,
+                                thickness = 1.dp
                             )
                             Text(
-                                text = jobDetails.jobDescription,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onBackground
+                                text = "Job Type: ${jobDetails.jobType}",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 20.sp // Same font size as Location
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Text(
+                                text = "Email: ${jobDetails.email}",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 20.sp // Same font size as Location
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
                             Spacer(modifier = Modifier.size(8.dp))
 
-                            // Apply Button
+                            // Apply Now Button
+                            // Apply Now Button
                             Button(
                                 onClick = {
-                                    navController.navigate("application_screen/${jobDetails.jobName}")
+                                    val email = jobDetails.email
+                                    val subject = "Job Application: ${jobDetails.jobName}"
+                                    val body = "Dear Employer,\n\nI am interested in applying for the ${jobDetails.jobName} position. Please find my details attached.\n\nBest regards,\n[Your Name]"
+
+                                    // Create an Intent to send the email using ACTION_SEND
+                                    val emailIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "message/rfc822"
+                                        putExtra(Intent.EXTRA_EMAIL, arrayOf("youremail@example.com")) // Use a known working email address
+                                        putExtra(Intent.EXTRA_SUBJECT, "Test Email")
+                                        putExtra(Intent.EXTRA_TEXT, "This is a test email")
+                                    }
+
+                                    try {
+                                        val resolveInfo = context.packageManager.queryIntentActivities(emailIntent, 0)
+                                        if (resolveInfo.isNotEmpty()) {
+                                            context.startActivity(Intent.createChooser(emailIntent, "Choose an Email Client"))
+                                        } else {
+                                            Toast.makeText(context, "No email client found.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Failed to send email: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+
                                 },
                                 modifier = Modifier.padding(top = 16.dp)
                             ) {
@@ -150,6 +206,8 @@ fun JobDescription(navController: NavController, jobName: String) {
                                     fontSize = 16.sp
                                 )
                             }
+
+
                         }
                     }
                 } ?: run {

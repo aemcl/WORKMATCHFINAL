@@ -1,7 +1,7 @@
 package com.example.jobmatch.employee
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -17,7 +17,7 @@ import com.example.jobmatch.employee.pages.Job
 import com.example.jobmatch.employee.pages.JobItem
 import com.example.jobmatch.employee.pages.JobRepository
 
-// Function to fetch and display all posted jobs in a scrollable state
+// Function to fetch and display all posted jobs in a carousel (horizontal scroll)
 @Composable
 fun AllJobsPosted(navController: NavController) {
     var jobs by remember { mutableStateOf<List<Job>>(emptyList()) }
@@ -28,14 +28,14 @@ fun AllJobsPosted(navController: NavController) {
         jobs = jobRepository.getJobs() // Fetch all jobs from the database
     }
 
-    // Ensure the LazyColumn is within a scrollable container
+    // Display a carousel (horizontal scrollable list) of jobs
     if (jobs.isNotEmpty()) {
-        LazyColumn(
-            state = scrollState,            // Attach the scroll state to the LazyColumn
-            modifier = Modifier.fillMaxSize() // Ensures the column fills available space
+        LazyRow(
+            state = scrollState,            // Attach the scroll state to the LazyRow
+            modifier = Modifier.fillMaxSize(), // Ensure the row fills available space
         ) {
             items(jobs) { job ->
-                //JobItem(job, navController = navController) // Reuse the JobItem composable to display each job
+                JobItem(job = job, navController = navController) // Display each job in the carousel
             }
         }
     } else {

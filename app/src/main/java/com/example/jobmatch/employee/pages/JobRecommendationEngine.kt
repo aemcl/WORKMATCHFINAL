@@ -2,11 +2,15 @@ package com.example.jobmatch.employee.pages
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,9 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.accompanist.pager.*
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -28,7 +36,8 @@ data class Job(
     val jobSalary: Int = 0,
     val jobAddress: String = "",
     val companyWorkField: String="",
-
+    val jobType: String="",
+    val email: String="",
 )
 
 // Utility functions for computing scores
@@ -121,26 +130,85 @@ fun findRelatedJobs(user: EmployeeProfileData, jobs: List<Job>, maxRelated: Int 
 }
 
 // Composable for displaying UI
+@OptIn(ExperimentalMaterial3Api::class) // Opt-in to the experimental Badge API
 @Composable
 fun JobItem(job: Job, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp)
+            .padding(vertical = 12.dp, horizontal = 16.dp)
             .clickable {
                 // Navigate to the Job Description screen with the selected job
-                navController.navigate("job_detail/${job.jobName}") // Pass job name or job ID as argument
-            }
+                navController.navigate("job_detail/${job.jobName}")
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 8.dp
+        )
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            Text(text = job.jobName, style = MaterialTheme.typography.titleLarge)
-            Text(text = "Location: ${job.jobAddress}")
-            Text(text = "Salary: ${job.jobSalary}")
-            Text(text = "Description: ${job.jobDescription}")
-            Text(text = "Company WorkField: ${job.companyWorkField}")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            // Job Name
+            Text(
+                text = job.jobName,
+                style = MaterialTheme.typography.titleMedium, // Material 3 typography
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(5.dp))
+
+            // Location
+            Text(
+                text = "Location: ${job.jobAddress}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Salary
+            Text(
+                text = "Salary: ${job.jobSalary}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Description
+            Text(
+                text = "Required: ${job.jobDescription}",
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Company WorkField
+            Text(
+                text = "Related: ${job.companyWorkField}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            // Job Type - Badge
+            Text(
+                text = "Job Type: ${job.jobType}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "Email: ${job.email}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
+
 
 class JobRepository {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -154,8 +222,9 @@ class JobRepository {
                     jobDescription = document.getString("jobDescription") ?: "",
                     jobSalary = document.getLong("jobSalary")?.toInt() ?: 0,
                     jobAddress = document.getString("jobAddress") ?: "",
-
-
+                    jobType = document.getString("jobType") ?: "",
+                    companyWorkField= document.getString("companyWorkField") ?: "",
+                    email = document.getString("email") ?: "",
                 )
             }
         } catch (e: Exception) {
@@ -174,52 +243,127 @@ class JobRepository {
     }
 }
 
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun RecommendedJobsScreen(navController: NavController, userId: String) {
     val db = FirebaseFirestore.getInstance()
     var jobs by remember { mutableStateOf<List<Job>>(emptyList()) }
     var userProfile by remember { mutableStateOf<EmployeeProfileData?>(null) }
 
+    // Fetch jobs and user profile
     LaunchedEffect(userId) {
         val jobRepository = JobRepository()
         jobs = jobRepository.getJobs()
         userProfile = jobRepository.getEmployeeProfile(userId)
     }
 
+    // When jobs and user profile are ready
     when {
         jobs.isNotEmpty() && userProfile != null -> {
             val recommendedJobs = recommendJobs(userProfile!!, jobs)
-            LazyColumn {
-                items(recommendedJobs) { job -> JobItem(job, navController) }
+
+            Column(
+                modifier = Modifier.wrapContentHeight() // Content wraps height without extra space
+            ) {
+                // Horizontal Pager for carousel
+                val pagerState = rememberPagerState()
+
+                HorizontalPager(
+                    count = recommendedJobs.size,
+                    state = pagerState,
+                    modifier = Modifier
+                        .height(150.dp) // Adjust height to fit carousel snugly
+                ) { pageIndex ->
+                    val job = recommendedJobs[pageIndex]
+                    JobItem(job, navController)
+                }
+
+                // Pager Indicator
+                HorizontalPagerIndicator(
+                    pagerState = pagerState,
+                    modifier = Modifier.align(Alignment.CenterHorizontally), // Center indicator below carousel
+                    activeColor = MaterialTheme.colorScheme.primary,
+                    inactiveColor = Color.Gray
+                )
             }
         }
-        jobs.isEmpty() -> Text("No jobs available")
-        userProfile == null -> Text("Loading profile...")
-        else -> Text("Loading...")
+        jobs.isEmpty() -> Text(
+            text = "No jobs available",
+            modifier = Modifier.wrapContentHeight(),
+            style = MaterialTheme.typography.bodyLarge
+        )
+        userProfile == null -> Text(
+            text = "Loading profile...",
+            modifier = Modifier.wrapContentHeight(),
+            style = MaterialTheme.typography.bodyLarge
+        )
+        else -> Text(
+            text = "Loading...",
+            modifier = Modifier.wrapContentHeight(),
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
 
+
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun RelatedJobsScreen(navController: NavController, userId: String) {
     val db = FirebaseFirestore.getInstance()
     var jobs by remember { mutableStateOf<List<Job>>(emptyList()) }
     var userProfile by remember { mutableStateOf<EmployeeProfileData?>(null) }
 
+    // Fetch jobs and user profile
     LaunchedEffect(userId) {
         val jobRepository = JobRepository()
         jobs = jobRepository.getJobs()
         userProfile = jobRepository.getEmployeeProfile(userId)
     }
 
+    // When jobs and user profile are ready
     when {
         jobs.isNotEmpty() && userProfile != null -> {
-            val recommendedJobs = relatedJobs(userProfile!!, jobs)
-            LazyColumn{
-                items(recommendedJobs) { job -> JobItem(job, navController) }
+            val relatedJobs = relatedJobs(userProfile!!, jobs)
+
+            Column(
+                modifier = Modifier.wrapContentHeight() // Adjust height to content without extra padding
+            ) {
+                // Horizontal Pager for carousel
+                val pagerState = rememberPagerState()
+
+                HorizontalPager(
+                    count = relatedJobs.size,
+                    state = pagerState,
+                    modifier = Modifier
+                        .height(150.dp) // Compact height for carousel
+                ) { pageIndex ->
+                    val job = relatedJobs[pageIndex]
+                    JobItem(job, navController)
+                }
+
+                // Pager Indicator
+                HorizontalPagerIndicator(
+                    pagerState = pagerState,
+                    modifier = Modifier.align(Alignment.CenterHorizontally), // Center indicator below carousel
+                    activeColor = MaterialTheme.colorScheme.primary,
+                    inactiveColor = Color.Gray
+                )
             }
         }
-        jobs.isEmpty() -> Text("No jobs available")
-        userProfile == null -> Text("Loading profile...")
-        else -> Text("Loading...")
+        jobs.isEmpty() -> Text(
+            text = "No jobs available",
+            modifier = Modifier.wrapContentHeight(), // Compactly wrap height
+            style = MaterialTheme.typography.bodyLarge
+        )
+        userProfile == null -> Text(
+            text = "Loading profile...",
+            modifier = Modifier.wrapContentHeight(), // Compactly wrap height
+            style = MaterialTheme.typography.bodyLarge
+        )
+        else -> Text(
+            text = "Loading...",
+            modifier = Modifier.wrapContentHeight(), // Compactly wrap height
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }

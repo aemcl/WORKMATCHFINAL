@@ -170,10 +170,10 @@ fun EmployeeProfile(navController: NavController) {
                         modifier = Modifier.fillMaxSize(),
                         color = Color.Black
                      ) {
-                        val profilePicUrl = userInfo?.profilePicUri
-                        if (profilePicUrl != null) {
+                        val profilePicUri = userInfo?.profilePicUri
+                        if (profilePicUri != null) {
                            Image(
-                              painter = rememberImagePainter(data = profilePicUrl, builder = { crossfade(true) }),
+                              painter = rememberImagePainter(data = profilePicUri, builder = { crossfade(true) }),
                               contentDescription = "Full Profile Picture",
                               contentScale = ContentScale.Fit,
                               modifier = Modifier.fillMaxSize()
@@ -272,7 +272,7 @@ fun EmployeeProfile(navController: NavController) {
 }
 
 @Composable
-fun ProfileInfoBox1(label: String, value: String) {
+fun ProfileInfoBox(label: String, value: String) {
    Box(
       modifier = Modifier
          .border(BorderStroke(1.dp, Brush.horizontalGradient(listOf(Color.Gray, Color.LightGray))), CircleShape)

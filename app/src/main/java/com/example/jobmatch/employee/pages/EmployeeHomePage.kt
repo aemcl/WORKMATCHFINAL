@@ -117,12 +117,12 @@ fun EmployeeHomePage(navController: NavController, userId: String) {
                     SectionTitle("Recommended Jobs")
                     RecommendedJobsScreen(navController, userId)
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
 
                     SectionTitle("Related Jobs")
                     RelatedJobsScreen(navController, userId)
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
 
                     SectionTitle("All Jobs")
                     AllJobsPosted(navController)

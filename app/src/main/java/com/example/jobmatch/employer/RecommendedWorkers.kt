@@ -3,86 +3,42 @@ package com.example.jobmatch.employer
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.jobmatch.R
+import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
+import com.example.jobmatch.employer.pages.Employee
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.toObject
 
 data class Names(val name: String, val pic: Int, val highlighted: Boolean = false)
 
 @Composable
-fun WorkersList(user: List<Names>) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        items(user.size) { index ->
-            NamesDesign(user[index])
-            Spacer(modifier = Modifier.size(8.dp))
-        }
-    }
-}
+fun RecommendedWorkers(navController: NavController, employerId: String) {
+    var employeeList by remember { mutableStateOf(listOf<Employee>()) }
+    val db = FirebaseFirestore.getInstance()
 
-@Composable
-fun NamesDesign(names: Names) {
-    val backgroundColor = if (names.highlighted) {
-        Brush.horizontalGradient(listOf(Color(0xFFE0F7FA), Color(0xFFFFFFFF)))
-    } else {
-        Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-    }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .background(brush = backgroundColor)
-    ) {
-        Image(
-            painter = painterResource(id = names.pic),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(50.dp)
-                .clip(CircleShape)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column {
-            Text(text = names.name, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-fun RecommendedWorkers() {
-    var employeeList by remember { mutableStateOf(listOf<Names>()) }
-
-
-    // Fetch employee data from Firebase
     LaunchedEffect(Unit) {
-        val db = FirebaseFirestore.getInstance()
         db.collection("employees").get()
             .addOnSuccessListener { result ->
                 val employees = result.mapNotNull { document ->
-                    // Assume Firestore has fields "name" and "profilePic"
-                    val name = document.getString("name") ?: return@mapNotNull null
-                    val pic = R.drawable.jungie1 // Replace with actual profile pic if stored as a URL
-                    Names(name = name, pic = pic)
+                    document.toObject<Employee>()
                 }
                 employeeList = employees
             }
@@ -91,14 +47,78 @@ fun RecommendedWorkers() {
             }
     }
 
-    Column {
-        Text(
-            text = "Recommended Workers",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(20.dp)
-        )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Heading or Title for the carousel (optional)
 
-        WorkersList(user = employeeList)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Carousel with LazyRow for horizontal scrolling
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp)  // Add padding around the items
+        ) {
+            items(employeeList) { employee ->
+                EmployeeCard(employee = employee) { employeeId ->
+                    navController.navigate("employeeProfile/$employeeId")
+                }
+                Spacer(modifier = Modifier.width(16.dp))  // Space between items
+            }
+        }
+    }
+}
+
+@Composable
+fun EmployeeCard(employee: Employee, onClick: (String) -> Unit) {
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .width(180.dp)  // Fixed width for each card in the carousel
+            .clickable { onClick(employee.fullName) },
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Profile Image or Default Icon
+            if (employee.profilePicUri.isNotEmpty()) {
+                Image(
+                    painter = rememberAsyncImagePainter(employee.profilePicUri),
+                    contentDescription = "Profile Picture of ${employee.fullName}",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Default Profile Picture",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray)
+                        .padding(8.dp),
+                    tint = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Name and Description
+            Text(
+                text = employee.fullName,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = employee.description,
+                fontSize = 12.sp,
+                color = Color.Gray,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
     }
 }

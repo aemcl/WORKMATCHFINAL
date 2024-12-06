@@ -3,12 +3,13 @@ package com.example.jobmatch
 
 import JobDescription
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.jobmatch.employee.EditEmployeeProfile
 import com.example.jobmatch.employee.EmployeeMainScreen
-import com.example.jobmatch.employee.WorkerDetailScreen
 import com.example.jobmatch.employee.pages.ChangePassword
 import com.example.jobmatch.employee.pages.DocumentViewerScreen
 import com.example.jobmatch.employee.pages.EmployeeHomePage
@@ -84,9 +85,19 @@ fun Navigation(){
             EmployerMainScreen(navController = navController, userRole = userRole)
         }
 
-        composable(Routes.recoWorkers) {
-            RecommendedWorkers()
+        composable(
+            route = "${Routes.recoWorkers}/{employerId}",
+            arguments = listOf(
+                navArgument("employerId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            // Retrieve the employerId from the backStackEntry arguments
+            val employerId = backStackEntry.arguments?.getString("employerId") ?: ""
+
+            // Pass it to the RecommendedWorkers composable
+            RecommendedWorkers(navController = navController, employerId = employerId)
         }
+
 
         composable(Routes.authentication) {
             Authentication()
@@ -105,10 +116,6 @@ fun Navigation(){
             JobDescription(navController = navController, jobName = jobName)
         }
 
-        composable("worker_detail/{workerId}") { backStackEntry ->
-            val workerId = backStackEntry.arguments?.getString("workerId") ?: ""
-            WorkerDetailScreen(navController, workerId)
-        }
 
         composable(Routes.employeeForm) {
             EmployeeForm(navController)

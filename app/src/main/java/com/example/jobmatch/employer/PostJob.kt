@@ -34,6 +34,8 @@ fun PostJob(navController: NavController) {
     var jobDescription by remember { mutableStateOf("") }
     var jobSalary by remember { mutableStateOf("") }
     var companyWorkField by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var jobType by remember { mutableStateOf("") }
     var isSaving by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -79,7 +81,18 @@ fun PostJob(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
         )
-
+        OutlinedTextField(
+            value = jobType,
+            onValueChange = { jobType = it },
+            label = { Text("Job Type") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
@@ -102,6 +115,8 @@ fun PostJob(navController: NavController) {
                     jobDescription = jobDescription,
                     jobSalary = salary,
                     companyWorkField = companyWorkField ,
+                    jobType = jobType,
+                    email=email,
                     db = db
                 ) { success ->
                     isSaving = false
@@ -130,6 +145,8 @@ fun saveJobToFirebase(
     jobDescription: String,
     jobSalary: Int,
     companyWorkField: String,
+    jobType:String,
+    email:String,
     db: FirebaseFirestore,
     onComplete: (Boolean) -> Unit
 ) {
@@ -139,7 +156,10 @@ fun saveJobToFirebase(
         "jobDescription" to jobDescription,
         "companyWorkField" to companyWorkField,
         "jobSalary" to jobSalary,
+        "jobType" to jobType,
+        "email" to email,
     )
+
 
     db.collection("jobs")
         .add(jobData)
