@@ -33,6 +33,7 @@ fun PostJob(navController: NavController) {
     var jobAddress by remember { mutableStateOf("") }
     var jobDescription by remember { mutableStateOf("") }
     var jobSalary by remember { mutableStateOf("") }
+    var companyWorkField by remember { mutableStateOf("") }
     var isSaving by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -65,7 +66,12 @@ fun PostJob(navController: NavController) {
             label = { Text("Job Description") },
             modifier = Modifier.fillMaxWidth()
         )
-
+        OutlinedTextField(
+            value = companyWorkField,
+            onValueChange = { companyWorkField = it },
+            label = { Text("Company WorkField") },
+            modifier = Modifier.fillMaxWidth()
+        )
         OutlinedTextField(
             value = jobSalary,
             onValueChange = { jobSalary = it },
@@ -78,7 +84,7 @@ fun PostJob(navController: NavController) {
 
         Button(
             onClick = {
-                if (jobName.isBlank() || jobAddress.isBlank() || jobDescription.isBlank() || jobSalary.isBlank()) {
+                if (jobName.isBlank() || jobAddress.isBlank() || jobDescription.isBlank() || jobSalary.isBlank() || companyWorkField.isBlank()) {
                     Toast.makeText(context, "All fields are required.", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
@@ -95,6 +101,7 @@ fun PostJob(navController: NavController) {
                     jobAddress = jobAddress,
                     jobDescription = jobDescription,
                     jobSalary = salary,
+                    companyWorkField = companyWorkField ,
                     db = db
                 ) { success ->
                     isSaving = false
@@ -122,6 +129,7 @@ fun saveJobToFirebase(
     jobAddress: String,
     jobDescription: String,
     jobSalary: Int,
+    companyWorkField: String,
     db: FirebaseFirestore,
     onComplete: (Boolean) -> Unit
 ) {
@@ -129,7 +137,8 @@ fun saveJobToFirebase(
         "jobName" to jobName,
         "jobAddress" to jobAddress,
         "jobDescription" to jobDescription,
-        "jobSalary" to jobSalary
+        "companyWorkField" to companyWorkField,
+        "jobSalary" to jobSalary,
     )
 
     db.collection("jobs")

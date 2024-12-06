@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="JOBMATCH.app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-12-02T07:20:17.979059500Z">
+        <DropdownSelection timestamp="2024-12-03T00:24:55.176784100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=10ACAP0YUX001KC" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=3451351498000FS" />
             </handle>
           </Target>
         </DropdownSelection>

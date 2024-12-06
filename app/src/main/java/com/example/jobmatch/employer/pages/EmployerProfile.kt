@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -119,7 +118,7 @@ fun EmployerProfile(navController: NavController) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,  // Corrected reference
                             contentDescription = "Back",
-                            modifier = Modifier.clickable { navController.navigateUp() }
+                            modifier = Modifier.clickable { navController.navigate(Routes.employerMainScreen) }
                         )
 
                         Text(
@@ -198,6 +197,8 @@ fun EmployerProfile(navController: NavController) {
                         ProfileInfoBox(label = "Company Type", value = it.companyType)
                         Spacer(modifier = Modifier.height(8.dp))
                         ProfileInfoBox(label = "Description", value = it.description)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        ProfileInfoBox(label = "Company WorkField", value = it.companyWorkField)
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -233,9 +234,9 @@ fun ProfileInfoBox(label: String, value: String) {
     Box(
         modifier = Modifier
             .border(BorderStroke(1.dp, Brush.horizontalGradient(listOf(Color.Gray, Color.LightGray))), CircleShape)
-            .width(250.dp)
-            .height(50.dp)
-            .padding(12.dp)
+            .fillMaxWidth()  // Make the box take up the full width
+            .height(60.dp)  // Adjust the height if needed
+            .padding(16.dp)  // Increase padding for better spacing
     ) {
         Text(
             text = "$label: $value",
@@ -245,11 +246,13 @@ fun ProfileInfoBox(label: String, value: String) {
     }
 }
 
+
 data class CompanyInfo(
     val companyName: String = "",
     val companyAddress: String = "",
     val companyType: String = "",
     val description: String = "",
+    val companyWorkField: String ="",
     var profilePictureUrl: String? = null
 )
 

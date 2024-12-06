@@ -6,18 +6,19 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun LogOut(navController: NavController) {
+fun LogOut(navController: NavController, userRole: String) {
     val auth = FirebaseAuth.getInstance()
 
-    // Sign the user out
+    // Sign the user out from Firebase
     auth.signOut()
 
     // Clear locally stored user credentials if necessary
     clearLocalCredentials(navController.context)
 
-    // Ensure back stack is cleared and user cannot navigate back to authenticated screens
+    // Navigate to login screen
     navController.navigate(Routes.login) {
-        popUpTo(Routes.employeeMainScreen) { inclusive = true }  // Clear entire back stack
+        // Clear the back stack to prevent navigating back to authenticated screens
+        popUpTo(Routes.login) { inclusive = true }  // Clear the stack from login screen onwards
     }
 }
 
@@ -25,7 +26,7 @@ fun LogOut(navController: NavController) {
 fun clearLocalCredentials(context: Context) {
     val sharedPrefs = context.getSharedPreferences("credentials", Context.MODE_PRIVATE)
     with(sharedPrefs.edit()) {
-        clear() // Remove local credentials
+        clear()  // Remove all locally saved credentials
         apply()
     }
 }

@@ -122,6 +122,13 @@ fun JobDescription(navController: NavController, jobName: String) {
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
+
+                            // job workField
+                            Text(
+                                text = "Job WorkField",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                             Text(
                                 text = jobDetails.jobDescription,
                                 style = MaterialTheme.typography.bodyMedium,

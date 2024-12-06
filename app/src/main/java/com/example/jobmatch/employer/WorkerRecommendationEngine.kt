@@ -36,15 +36,14 @@ data class EmployerProfileData(
     val companyName: String = "",
     val companyAddress: String = "",
     val companyType: String = "",
-    val description: String = "",
+    val companyDescription: String = "",
+    val companyWorkField: String = "",
     val profilePictureUrl: String = "",
     val formCompleted: Boolean = false
 )
-
-// Utility functions for computing scores
-fun computeSkillMatch(userSkills: String, description: String): Double {
+fun computeCompanyType(jobSkills: String, userSkills: String): Double {
     val userSet = userSkills.split(",").map { it.trim().lowercase() }.toSet()
-    val jobSet = description.split(",").map { it.trim().lowercase() }.toSet()
+    val jobSet = jobSkills.split(",").map { it.trim().lowercase() }.toSet()
 
     val intersection = userSet.intersect(jobSet).size
     val union = userSet.union(jobSet).size
@@ -52,31 +51,41 @@ fun computeSkillMatch(userSkills: String, description: String): Double {
     return if (union == 0) 0.0 else intersection.toDouble() / union.toDouble()
 }
 
-fun computeLocationScore(userLocation: String, companyAddress: String): Double {
-    return if (userLocation.equals(companyAddress, ignoreCase = true)) 1.0 else 0.0
+// Function to compute location score
+fun computeLocationScore(jobLocation: String, userLocation: String): Double {
+    return if (jobLocation.equals(userLocation, ignoreCase = true)) 1.0 else 0.0
 }
 
-fun computeWorkerScore(company: EmployerProfileData, worker: EmployeeProfileData): Double {
-    val skillScore = computeSkillMatch(company.description, worker.description)
-    val locationScore = computeLocationScore(company.companyAddress, worker.address)
+// Function to compute work field score
+fun computeWorkFieldScore(companyWorkField: String, userWorkField: String): Double {
+    return if (companyWorkField.equals(userWorkField, ignoreCase = true)) 1.0 else 0.0
+}
+
+// Function to compute match score for a worker
+fun computeWorkerScore(employer: EmployerProfileData, worker: EmployeeProfileData): Double {
+    val skillScore = computeCompanyType(employer.companyDescription, worker.description)
+    val locationScore = computeLocationScore(employer.companyAddress, worker.address)
+    val workFieldScore = computeWorkFieldScore(employer.companyWorkField, worker.workField)
 
     // Weights for scoring
     val skillWeight = 0.7
-    val locationWeight = 0.3
+    val locationWeight = 0.2
+    val workFieldWeight = 0.1
 
-    return (skillScore * skillWeight) + (locationScore * locationWeight)
+    return (skillScore * skillWeight) + (locationScore * locationWeight) + (workFieldScore * workFieldWeight)
 }
 
-fun recommendWorkers(company: EmployerProfileData, workers: List<EmployeeProfileData>): List<EmployeeProfileData> {
-    val threshold = 0.7 // Only recommend workers with a score above this
+// Function to recommend workers based on scores
+fun recommendWorkers(employer: EmployerProfileData, workers: List<EmployeeProfileData>): List<EmployeeProfileData> {
+    val threshold = 0.7 // Only recommend workers with a score above this threshold
     return workers
-        .map { worker -> worker to computeWorkerScore(company, worker) }
-        .filter { it.second >= threshold } // Filter based on the threshold
+        .map { worker -> worker to computeWorkerScore(employer, worker) }
+        .filter { it.second >= threshold }
         .sortedByDescending { it.second }
-        .map { it.first }
+        .map { it.first } // Return only the workers
 }
 
-// Composables for displaying UI
+// Composable for displaying a worker item
 @Composable
 fun WorkerItem(worker: EmployeeProfileData, navController: NavController) {
     Card(
@@ -85,7 +94,7 @@ fun WorkerItem(worker: EmployeeProfileData, navController: NavController) {
             .padding(8.dp)
             .clickable {
                 // Navigate to worker detail screen
-                navController.navigate("worker_detail/${worker.email}")
+                navController.navigate("worker_detail/${worker.fullName}")
             }
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -106,7 +115,35 @@ fun WorkerItem(worker: EmployeeProfileData, navController: NavController) {
     }
 }
 
+// Composable to display recommended workers
+@Composable
+fun RecommendedWorkersScreen(navController: NavController, userId: String) {
+    val db = FirebaseFirestore.getInstance()
+    var employerProfile by remember { mutableStateOf<EmployerProfileData?>(null) }
+    var workers by remember { mutableStateOf<List<EmployeeProfileData>>(emptyList()) }
 
+    LaunchedEffect(userId) {
+        val employerRepository = EmployerRepository()
+        workers = employerRepository.getEmployeeProfiles()
+        employerProfile = employerRepository.getEmployerProfile(userId)
+    }
+
+    when {
+        workers.isNotEmpty() && employerProfile != null -> {
+            val recommendedWorkers = recommendWorkers(employerProfile!!, workers)
+            LazyColumn {
+                items(recommendedWorkers) { worker ->
+                    WorkerItem(worker, navController)
+                }
+            }
+        }
+        employerProfile == null -> Text("Loading employer profile...")
+        workers.isEmpty() -> Text("No workers available")
+        else -> Text("Loading...")
+    }
+}
+
+// Repository to handle Firestore integration
 class EmployerRepository {
     private val db = FirebaseFirestore.getInstance()
 
@@ -127,39 +164,13 @@ class EmployerRepository {
                     fullName = document.getString("name") ?: "",
                     address = document.getString("address") ?: "",
                     description = document.getString("skills") ?: "",
-                    profilePicUri = document.getString("profilePictureUrl") ?: ""
+                    profilePicUri = document.getString("profilePictureUrl") ?: "",
+                    workField = document.getString("workField") ?: ""
                 )
             }
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
         }
-    }
-}
-
-
-@Composable
-fun RecommendedWorkersScreen(navController: NavController, employerId: String) {
-    var employerProfile by remember { mutableStateOf<EmployerProfileData?>(null) }
-    var workers by remember { mutableStateOf<List<EmployeeProfileData>>(emptyList()) }
-
-    LaunchedEffect(employerId) {
-        val employerRepository = EmployerRepository()
-        employerProfile = employerRepository.getEmployerProfile(employerId)
-        workers = employerRepository.getEmployeeProfiles()
-    }
-
-    when {
-        employerProfile != null && workers.isNotEmpty() -> {
-            val recommendedWorkers = recommendWorkers(employerProfile!!, workers)
-            LazyColumn {
-                items(recommendedWorkers) { worker ->
-                    WorkerItem(worker, navController)
-                }
-            }
-        }
-        employerProfile == null -> Text("Loading employer profile...")
-        workers.isEmpty() -> Text("No workers available")
-        else -> Text("Loading...")
     }
 }

@@ -3,7 +3,7 @@ package com.example.jobmatch
 object Routes {
     const val welcome = "welcome"
     const val login = "login"
-    const val logOut= "log out"
+    const val logOut= "Log Out"
     const val forgotpass = "forgotpass"
     const val changepass = "changepass"
     const val employerSearch = "Employer search"

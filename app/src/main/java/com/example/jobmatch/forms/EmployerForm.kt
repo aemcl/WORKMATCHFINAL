@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
 import com.example.jobmatch.Routes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -38,7 +37,9 @@ fun EmployerForm(navController: NavController) {
     var companyName by remember { mutableStateOf("") }
     var companyAddress by remember { mutableStateOf("") }
     var companyType by remember { mutableStateOf("") }
+
     var description by remember { mutableStateOf("") }
+    var companyWorkField by remember { mutableStateOf("") }
     var profilePictureUri by remember { mutableStateOf<Uri?>(null) }
 
     val scrollState = rememberScrollState()
@@ -130,10 +131,17 @@ fun EmployerForm(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(20.dp))
+        OutlinedTextField(
+            value = companyWorkField,
+            onValueChange = { companyWorkField = it },
+            shape = RoundedCornerShape(12.dp),
+            label = { Text(text = "Company WorkField:") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Button(
             onClick = {
-                if (companyName.isEmpty() || companyAddress.isEmpty() || companyType.isEmpty() || description.isEmpty()) {
+                if (companyName.isEmpty() || companyAddress.isEmpty() || companyType.isEmpty() || description.isEmpty() || companyWorkField.isEmpty()) {
                     Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 } else {
                     user?.uid?.let { userId ->
@@ -141,6 +149,7 @@ fun EmployerForm(navController: NavController) {
                             "companyName" to companyName,
                             "companyAddress" to companyAddress,
                             "companyType" to companyType,
+                            "companyWorkField" to companyWorkField,
                             "description" to description,
                             "role" to "Employer"
                         )

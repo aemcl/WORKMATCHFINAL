@@ -2,6 +2,8 @@
 
 package com.example.jobmatch.employer.pages
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,12 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.jobmatch.R
 import com.example.jobmatch.Routes
 import com.example.jobmatch.employer.RecommendedWorkersScreen
 import com.google.firebase.firestore.FirebaseFirestore
@@ -49,20 +52,26 @@ fun EmployerHomePage(navController: NavController, employerId: String) {
 
     // Fetch employee data from Firestore
     LaunchedEffect(Unit) {
-        db.collection("employees")
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                val employees = querySnapshot.documents.mapNotNull { it.toObject<Employee>() }
-                recommendedEmployees.value = employees
-                isLoading = false
-            }
-            .addOnFailureListener { e ->
-                Log.e("FirestoreError", "Error fetching employees: ", e)
-                errorMessage = "Error fetching employee data."
-                isLoading = false
-            }
+        isLoading = true // Set loading state to true at the start
+        try {
+            db.collection("employees")
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    val employees = querySnapshot.documents.mapNotNull { it.toObject<Employee>() }
+                    recommendedEmployees.value = employees // Update the state
+                    isLoading = false // Loading complete
+                }
+                .addOnFailureListener { e ->
+                    Log.e("FirestoreError", "Error fetching employees: ", e)
+                    errorMessage = "Error fetching employee data."
+                    isLoading = false // Ensure loading stops even on failure
+                }
+        } catch (e: Exception) {
+            Log.e("FirestoreError", "Unexpected error: ", e)
+            errorMessage = "Unexpected error occurred."
+            isLoading = false
+        }
     }
-
     // UI rendering
     Column(modifier = Modifier
         .fillMaxSize()
@@ -94,6 +103,7 @@ fun EmployerHomePage(navController: NavController, employerId: String) {
         )
         RecommendedWorkersScreen(navController, employerId)
         Spacer(modifier = Modifier.height(16.dp))
+
 
         Text(
             text = "All Employees",
@@ -208,6 +218,8 @@ fun EmployeeProfileScreen(navController: NavController, employeeId: String) {
     val db = FirebaseFirestore.getInstance()
     var employee by remember { mutableStateOf<Employee?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var showFullImage by remember { mutableStateOf(false) }
+    val context = LocalContext.current // Access the current context for launching intents
 
     // Fetch employee details from Firestore based on the passed employeeId
     LaunchedEffect(employeeId) {
@@ -240,21 +252,37 @@ fun EmployeeProfileScreen(navController: NavController, employeeId: String) {
                     .align(Alignment.CenterHorizontally)
                     .padding(8.dp)
             ) {
-                val painter = rememberAsyncImagePainter(employee!!.profilePicUri.ifEmpty { R.drawable.gambe })
-                Image(
-                    painter = painter,
-                    contentDescription = "Profile Picture of ${employee!!.fullName}",
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .border(2.dp, Color.Gray, CircleShape)
-                        .clickable {
-                            // Navigate to EmployeeDetailScreen and pass employee details
-                            navController.navigate("employee_detail_screen/${employee!!.fullName}")
-                        },
-                    contentScale = ContentScale.Crop
-                )
+                if (employee!!.profilePicUri.isEmpty()) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Default Profile Icon",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color.Gray, CircleShape)
+                            .background(Color.LightGray)
+                            .clickable {
+                                showFullImage = true
+                            },
+                        tint = Color.Gray
+                    )
+                } else {
+                    val painter = rememberAsyncImagePainter(employee!!.profilePicUri)
+                    Image(
+                        painter = painter,
+                        contentDescription = "Profile Picture of ${employee!!.fullName}",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color.Gray, CircleShape)
+                            .clickable {
+                                showFullImage = true
+                            },
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -299,12 +327,11 @@ fun EmployeeProfileScreen(navController: NavController, employeeId: String) {
                 Text(text = "Resume:", fontWeight = FontWeight.Bold)
                 Text(
                     text = employee!!.resumeUri.ifEmpty { "No resume uploaded" },
-                    color = Color.Gray,
-                    modifier = Modifier.clickable {
-                        // Open resume URL if available (or handle case where not available)
-                        if (employee!!.resumeUri.isNotEmpty()) {
-                            // Add logic to open the resume URI in a browser or other app
-                        }
+                    color = if (employee!!.resumeUri.isNotEmpty()) Color.Blue else Color.Gray,
+                    modifier = Modifier.clickable(enabled = employee!!.resumeUri.isNotEmpty()) {
+                        // Open resume URL if available
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(employee!!.resumeUri))
+                        context.startActivity(intent)
                     }
                 )
             }
@@ -317,13 +344,47 @@ fun EmployeeProfileScreen(navController: NavController, employeeId: String) {
             }
         }
     }
-}
 
+    // Show full image in a dialog
+    if (showFullImage) {
+        Dialog(onDismissRequest = { showFullImage = false }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Black.copy(alpha = 0.8f)) // Background for better visibility
+                    .clickable { showFullImage = false } // Close the dialog when clicking on the image
+            ) {
+                if (employee!!.profilePicUri.isEmpty()) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Default Profile Icon",
+                        modifier = Modifier
+                            .size(200.dp)
+                            .align(Alignment.Center)
+                            .background(Color.Gray, shape = CircleShape)
+                            .padding(16.dp), // Inner padding for a better look
+                        tint = Color.White
+                    )
+                } else {
+                    Image(
+                        painter = rememberAsyncImagePainter(employee!!.profilePicUri),
+                        contentDescription = "Full Image of ${employee!!.fullName}",
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
+
+        }
+    }
+}
 
 // Updated Employee data class
 data class Employee(
     val fullName: String = "",
     val description: String = "",
+    val workField: String = "",
     val profilePicUri: String = "",
     val address: String = "",
     val dateOfBirth: String = "",

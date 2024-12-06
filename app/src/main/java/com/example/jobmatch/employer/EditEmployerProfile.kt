@@ -57,6 +57,7 @@ fun EditEmployerProfile(navController: NavController) {
     var companyAddress by remember { mutableStateOf("") }
     var companyType by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var companyWorkField by remember { mutableStateOf("") }
     var profilePictureUri by remember { mutableStateOf<Uri?>(null) }
     var profilePictureUrl by remember { mutableStateOf("") }
 
@@ -74,6 +75,7 @@ fun EditEmployerProfile(navController: NavController) {
                         companyAddress = it.getString("companyAddress") ?: ""
                         companyType = it.getString("companyType") ?: ""
                         description = it.getString("description") ?: ""
+                        companyWorkField = it.getString("companyWorkField") ?: ""
                         profilePictureUrl = it.getString("profilePictureUrl") ?: ""
                     }
                 }
@@ -129,6 +131,7 @@ fun EditEmployerProfile(navController: NavController) {
             CustomTextField(value = companyAddress, onValueChange = { companyAddress = it }, label = "Company Address")
             CustomTextField(value = companyType, onValueChange = { companyType = it }, label = "Company Type")
             CustomTextField(value = description, onValueChange = { description = it }, label = "Description")
+            CustomTextField(value = companyWorkField, onValueChange = { companyWorkField = it }, label = "Company Workfield")
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -139,7 +142,8 @@ fun EditEmployerProfile(navController: NavController) {
                     "companyName" to companyName,
                     "companyAddress" to companyAddress,
                     "companyType" to companyType,
-                    "description" to description
+                    "description" to description,
+                    "companyWorkField" to companyWorkField
                 )
 
                 profilePictureUri?.let { uri ->

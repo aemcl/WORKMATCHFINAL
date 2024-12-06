@@ -8,6 +8,7 @@ data class Employee(
     val email: String = "",
     val birthDate: String = "",
     val address: String = "",
+    val workField:String="",
     val profilePicUri: String = "",  // URL for the profile picture
     val bio: String = "",
     val phoneNumber: String = "",

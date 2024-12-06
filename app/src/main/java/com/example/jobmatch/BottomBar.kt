@@ -17,24 +17,20 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 
 
@@ -46,39 +42,33 @@ fun BottomBar(navController: NavController, userRole: String) {
     )
 
     var selectedIndex by remember { mutableIntStateOf(0) }
-    var bottomBarVisible by remember { mutableStateOf(true) }
 
-    // Scroll behavior for BottomBar visibility
+    // Scroll behavior for TopBar visibility (if you need visibility changes based on scroll)
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
-        bottomBar = {
-            if (bottomBarVisible) {
-                NavigationBar(
-                    modifier = Modifier
-                        .height(56.dp)
-                        .zIndex(1f),
-                ) {
+        topBar = {
+            TopAppBar(
+                title = { Text(text = "JobMatch") },
+                actions = {
                     navItemList.forEachIndexed { index, navItem ->
-                        NavigationBarItem(
-                            selected = selectedIndex == index,
+                        IconButton(
                             onClick = { selectedIndex = index },
-                            icon = {
-                                BadgedBox(badge = {
-                                    if (navItem.badgeCount > 0)
-                                        Badge { Text(text = navItem.badgeCount.toString()) }
-                                }) {
-                                    Icon(imageVector = navItem.icon, contentDescription = navItem.label)
-                                }
-                            },
-                            label = { Text(text = navItem.label) }
-                        )
+                        ) {
+                            BadgedBox(badge = {
+                                if (navItem.badgeCount > 0)
+                                    Badge { Text(text = navItem.badgeCount.toString()) }
+                            }) {
+                                Icon(imageVector = navItem.icon, contentDescription = navItem.label)
+                            }
+                        }
                     }
-                }
-            }
+                },
+                modifier = Modifier.height(56.dp) // Set height for the top bar
+            )
         }
     ) { innerPadding ->
         ContentScreen(
@@ -86,10 +76,6 @@ fun BottomBar(navController: NavController, userRole: String) {
             selectedIndex = selectedIndex,
             navController = navController,
             userRole = userRole,
-            onScroll = { isScrollingUp ->
-                // Update visibility based on scroll direction
-                bottomBarVisible = !isScrollingUp
-            }
         )
     }
 }
@@ -100,8 +86,7 @@ fun ContentScreen(
     modifier: Modifier = Modifier,
     selectedIndex: Int,
     navController: NavController,
-    userRole: String,
-    onScroll: (Boolean) -> Unit
+    userRole: String
 ) {
     val scrollState = rememberLazyListState()
 
@@ -112,15 +97,10 @@ fun ContentScreen(
         firstVisibleItemIndex > 0 || firstVisibleItemScrollOffset > 0
     }
 
-    // Call onScroll when scroll direction changes
-    LaunchedEffect(scrollState) {
-        snapshotFlow { isScrollingUp }.collect { onScroll(it) }
-    }
-
     LazyColumn(
         state = scrollState,
         modifier = modifier,
-        contentPadding = PaddingValues(bottom = 56.dp), // Leave space for the bottom bar
+        contentPadding = PaddingValues(top = 56.dp), // Leave space for the top bar
     ) {
         items(50) { index ->
             Text(
@@ -132,4 +112,3 @@ fun ContentScreen(
         }
     }
 }
-

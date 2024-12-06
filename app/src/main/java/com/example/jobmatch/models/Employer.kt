@@ -9,6 +9,7 @@ data class Employer(
     val email: String = "",
     val companyLogoUrl: String = "",  // URL for the company logo
     val description: String = "",
+    val companyWorkField: String = "",
     val address: String = "",
     val industry: String = "",
     val role: String = ""

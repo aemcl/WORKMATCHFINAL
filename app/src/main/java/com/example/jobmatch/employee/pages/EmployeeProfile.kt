@@ -1,6 +1,7 @@
 @file:Suppress("DEPRECATION")
 package com.example.jobmatch.employee.pages
 
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -10,41 +11,18 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
@@ -64,27 +43,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 
-// Employee profile data model
-data class EmployeeProfileData(
-   val fullName: String = "",
-   val email: String? =null,
-   val address: String = "",
-   val description: String = "",
-   val dateOfBirth: String = "",
-   val phoneNumber: String = "",
-   val profilePicUri: String? = null,
-   val resumeUri: String? = null
-)
-
 @Composable
 fun EmployeeProfile(navController: NavController) {
    val user = FirebaseAuth.getInstance().currentUser
-   if (user == null) {
-      navController.navigate("login") {
-         popUpTo(navController.graph.startDestinationId) { inclusive = true }
-      }
-      return
-   }
 
    val db = FirebaseFirestore.getInstance()
    val storage = FirebaseStorage.getInstance().reference
@@ -93,11 +54,11 @@ fun EmployeeProfile(navController: NavController) {
    var errorMessage by remember { mutableStateOf<String?>(null) }
    var userInfo by remember { mutableStateOf<EmployeeProfileData?>(null) }
    var showFullImage by remember { mutableStateOf(false) }
-   var resumeUri by remember { mutableStateOf<Uri?>(null) } // Declare the state variable for resume URI
-   var showResumeDialog by remember { mutableStateOf(false) } // Declare the state variable for the dialog visibility
+   var resumeUri by remember { mutableStateOf<Uri?>(null) }
+   var showResumeDialog by remember { mutableStateOf(false) }
 
    // Launchers for file selection
-   val Launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+   val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
       uri?.let { uploadProfilePicture(it, user?.uid ?: "", storage, db) }
    }
    val resumeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -110,7 +71,12 @@ fun EmployeeProfile(navController: NavController) {
          db.collection("employees").document(user.uid).get()
             .addOnSuccessListener { documentSnapshot ->
                userInfo = documentSnapshot.toObject(EmployeeProfileData::class.java)
-               isLoading = false
+               if (userInfo != null) {
+                  isLoading = false
+               } else {
+                  errorMessage = "Failed to load profile data."
+                  isLoading = false
+               }
             }
             .addOnFailureListener { e ->
                Log.e("EmployeeProfile", "Error fetching user data", e)
@@ -137,9 +103,10 @@ fun EmployeeProfile(navController: NavController) {
                .background(Color.White)
                .padding(top = 10.dp)
          ) {
+            // Wrap the whole profile content in a scrollable column
             Column(
                modifier = Modifier
-                  .verticalScroll(rememberScrollState())
+                  .verticalScroll(rememberScrollState()) // Enable scrolling
                   .padding(15.dp),
                horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -152,7 +119,7 @@ fun EmployeeProfile(navController: NavController) {
                   Icon(
                      imageVector = Icons.Filled.ArrowBack,
                      contentDescription = "Back",
-                     modifier = Modifier.clickable { navController.navigateUp() }
+                     modifier = Modifier.clickable { navController.navigate(Routes.employeeMainScreen) }
                   )
 
                   Text(
@@ -166,14 +133,14 @@ fun EmployeeProfile(navController: NavController) {
                   )
                }
 
+               // Profile Picture
                OutlinedCard(
                   border = BorderStroke(5.dp, Color.White),
                   colors = CardDefaults.cardColors(containerColor = Color(0xEE07D7D7)),
-                  modifier = Modifier
-                     .size(150.dp)
-                     .padding(top = 16.dp),
+                  modifier = Modifier.size(150.dp).padding(top = 16.dp),
                   shape = CircleShape
-               ) {
+               )
+               {
                   val profilePicUrl = userInfo?.profilePicUri
                   if (profilePicUrl != null) {
                      Image(
@@ -196,6 +163,7 @@ fun EmployeeProfile(navController: NavController) {
                   }
                }
 
+               // Show Full Image Dialog
                if (showFullImage) {
                   Dialog(onDismissRequest = { showFullImage = false }) {
                      Surface(
@@ -226,24 +194,27 @@ fun EmployeeProfile(navController: NavController) {
 
                userInfo?.let {
                   ProfileInfoBox(label = "Full Name", value = it.fullName)
-                  Spacer(modifier = Modifier.height(8.dp))
-                  ProfileInfoBox(label = "Email", value = user?.email ?: "No email available") // Display email
-                  Spacer(modifier = Modifier.height(8.dp))
+                  Spacer(modifier = Modifier.height(2.dp))
+                  ProfileInfoBox(label = "Email", value = user?.email ?: "No email available")
+                  Spacer(modifier = Modifier.height(2.dp))
                   ProfileInfoBox(label = "Description", value = it.description)
-                  Spacer(modifier = Modifier.height(8.dp))
+                  Spacer(modifier = Modifier.height(2.dp))
+                  ProfileInfoBox(label = "Work Field", value = it.workField)
+                  Spacer(modifier = Modifier.height(2.dp))
                   ProfileInfoBox(label = "Date of Birth", value = it.dateOfBirth)
-                  Spacer(modifier = Modifier.height(8.dp))
+                  Spacer(modifier = Modifier.height(2.dp))
                   ProfileInfoBox(label = "Address", value = it.address)
-                  Spacer(modifier = Modifier.height(8.dp))
+                  Spacer(modifier = Modifier.height(2.dp))
                   ProfileInfoBox(label = "Phone Number", value = it.phoneNumber)
-                  Spacer(modifier = Modifier.height(8.dp))
 
-                  // Show Resume if available
+                  // Handle Resume URI
                   it.resumeUri?.let { uri ->
-                     resumeUri = Uri.parse(uri) // Update the resumeUri
+                     resumeUri = Uri.parse(uri)
                   }
 
-                  Spacer(modifier = Modifier.height(20.dp))
+                  Spacer(modifier = Modifier.height(2.dp))
+
+                  // View Documents Button
                   Box(
                      modifier = Modifier
                         .width(200.dp)
@@ -253,32 +224,37 @@ fun EmployeeProfile(navController: NavController) {
                         .background(Color.LightGray)
                         .border(BorderStroke(1.dp, Color.Gray), MaterialTheme.shapes.medium)
                         .clickable {
-                           showResumeDialog = true // Show resume dialog
+                           showResumeDialog = true
                         },
                      contentAlignment = Alignment.Center
                   ) {
                      Text(
-                        text = "View Resume",
+                        text = "View Documents",
                         fontSize = 18.sp,
                         color = Color.Blue
                      )
                   }
 
-                  // Show the resume content in a dialog
+                  // Show Document Dialog
                   if (showResumeDialog) {
-                     ResumeDialog(uri = resumeUri, onDismiss = { showResumeDialog = false })
+                     DocumentDialog(uri = resumeUri, onDismiss = { showResumeDialog = false }, navController = navController)
                   }
+
                }
 
-               Spacer(modifier = Modifier.height(20.dp))
+               Spacer(modifier = Modifier.height(2.dp))
 
+               // Change Password Button
                Button(
                   onClick = { navController.navigate(Routes.changepass) },
                   modifier = Modifier.wrapContentWidth(),
-                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
                ) {
                   Text(text = "Change Password", color = Color.White)
                }
+
+               Spacer(modifier = Modifier.height(2.dp))
+
                Button(
                   onClick = {
                      FirebaseAuth.getInstance().signOut()
@@ -289,9 +265,6 @@ fun EmployeeProfile(navController: NavController) {
                ) {
                   Text(text = "Log Out", color = Color.White)
                }
-
-
-               Spacer(modifier = Modifier.height(100.dp))
             }
          }
       }
@@ -299,13 +272,10 @@ fun EmployeeProfile(navController: NavController) {
 }
 
 @Composable
-fun ProfileInfoBox(label: String, value: String) {
+fun ProfileInfoBox1(label: String, value: String) {
    Box(
       modifier = Modifier
-         .border(
-            BorderStroke(1.dp, Brush.horizontalGradient(listOf(Color.Gray, Color.LightGray))),
-            CircleShape
-         )
+         .border(BorderStroke(1.dp, Brush.horizontalGradient(listOf(Color.Gray, Color.LightGray))), CircleShape)
          .width(250.dp)
          .height(50.dp)
          .padding(12.dp)
@@ -318,50 +288,113 @@ fun ProfileInfoBox(label: String, value: String) {
    }
 }
 
-fun uploadProfilePicture(uri: Uri, userId: String, storage: StorageReference, db: FirebaseFirestore) {
-   val profileRef = storage.child("profile_pics/$userId.jpg")
-   profileRef.putFile(uri)
-      .addOnSuccessListener {
-         profileRef.downloadUrl.addOnSuccessListener { downloadUri ->
-            db.collection("employees").document(userId)
-               .update("profilePicture", downloadUri.toString())
-         }
-      }
-      .addOnFailureListener { e ->
-         Log.e("EmployeeProfile", "Profile picture upload failed", e)
-      }
-}
-
-fun uploadResume(uri: Uri, userId: String, storage: StorageReference, db: FirebaseFirestore) {
-   val resumeRef = storage.child("resumes/$userId.pdf")
-   resumeRef.putFile(uri)
-      .addOnSuccessListener {
-         resumeRef.downloadUrl.addOnSuccessListener { downloadUri ->
-            db.collection("employees").document(userId)
-               .update("resumeUri", downloadUri.toString())
-         }
-      }
-      .addOnFailureListener { e ->
-         Log.e("EmployeeProfile", "Resume upload failed", e)
-      }
-}
 @Composable
-fun ResumeDialog(uri: Uri?, onDismiss: () -> Unit) {
+fun DocumentDialog(uri: Uri?, onDismiss: () -> Unit, navController: NavController) {
    if (uri != null) {
       AlertDialog(
          onDismissRequest = onDismiss,
-         title = { Text("Resume Content") },
-         text = {
-            // Use a PDF viewer or simple text (if it's a text-based resume)
-            Text("Displaying the content of the resume located at $uri")
-            // If it's a text-based resume, you could extract and show the content here.
-            // Or use a PDF viewer library to display the resume.
-         },
+         title = { Text(text = "Document View") },
+         text = { Text(text = "View your resume or document here.") },
          confirmButton = {
+            Button(
+               onClick = {
+                  navController.navigate("documentViewer/${Uri.encode(uri.toString())}")
+               }
+            ) {
+               Text("View Document")
+            }
+         },
+         dismissButton = {
             Button(onClick = onDismiss) {
-               Text("Close")
+               Text("Dismiss")
             }
          }
       )
    }
 }
+
+
+@Composable
+fun DocumentViewerScreen(uri: String?) {
+   if (uri != null) {
+      val context = LocalContext.current
+      val decodedUri = Uri.parse(uri)
+
+      // Render the PDF using AndroidPdfViewer
+      AndroidView(
+         factory = { ctx ->
+            com.github.barteksc.pdfviewer.PDFView(ctx, null).apply {
+               fromUri(decodedUri) // Use the decoded URI
+                  .enableSwipe(true) // Allow swipe gestures for navigation
+                  .swipeHorizontal(false) // Vertical scrolling
+                  .enableAnnotationRendering(true) // Render annotations
+                  .password(null) // Use this if PDF has a password
+                  .scrollHandle(null) // Use a scroll handle if needed
+                  .load()
+            }
+         },
+         modifier = Modifier.fillMaxSize()
+      )
+
+      // FloatingActionButton to open in an external PDF viewer
+      Box(
+         modifier = Modifier.fillMaxSize(),
+         contentAlignment = Alignment.Center // Position the button at the center of the screen
+      ) {
+         FloatingActionButton(
+            onClick = {
+               val intent = Intent(Intent.ACTION_VIEW, decodedUri).apply {
+                  setDataAndType(decodedUri, "application/pdf")
+                  flags = Intent.FLAG_ACTIVITY_NO_HISTORY
+               }
+               context.startActivity(intent)
+            },
+            modifier = Modifier.padding(16.dp) // Optional padding around the button
+         ) {
+            Icon(Icons.Default.OpenInNew, contentDescription = "Open in External Viewer")
+         }
+      }
+   } else {
+      Box(
+         modifier = Modifier.fillMaxSize(),
+         contentAlignment = Alignment.Center
+      ) {
+         Text(text = "Failed to load document.", color = Color.Red, fontSize = 18.sp)
+      }
+   }
+}
+
+
+fun uploadProfilePicture(uri: Uri, userId: String, storage: StorageReference, db: FirebaseFirestore) {
+   val profilePicRef = storage.child("employee_pics/$userId.jpg")
+   profilePicRef.putFile(uri).addOnSuccessListener {
+      profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+         db.collection("employees").document(userId).update("profilePicUri", downloadUrl.toString())
+      }
+   }.addOnFailureListener { e ->
+      Log.e("Profile", "Failed to upload profile picture", e)
+   }
+}
+
+fun uploadResume(uri: Uri, userId: String, storage: StorageReference, db: FirebaseFirestore) {
+   val resumeRef = storage.child("resumes/$userId.pdf")
+   resumeRef.putFile(uri).addOnSuccessListener {
+      resumeRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+         db.collection("employees").document(userId).update("resumeUri", downloadUrl.toString())
+      }
+   }
+}
+
+
+
+data class EmployeeProfileData(
+   val fullName: String = "",
+   val dateOfBirth: String = "",
+   val address: String = "",
+   val phoneNumber: String = "",
+   val description: String = "",
+   val workField: String = "",
+   val email: String = "",
+   val profilePicUri: String? = null,
+   val resumeUri: String? = null
+)

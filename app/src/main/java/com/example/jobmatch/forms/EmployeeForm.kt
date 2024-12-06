@@ -53,6 +53,7 @@ fun EmployeeForm(navController: NavController) {
     var fullName by remember { mutableStateOf("") }
     var dateOfBirth by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
+    var workField by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var resumeUri by remember { mutableStateOf<Uri?>(null) }
@@ -144,6 +145,15 @@ fun EmployeeForm(navController: NavController) {
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = workField,
+            onValueChange = { workField = it },
+            label = { Text(text = "WorkField") },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -201,7 +211,7 @@ fun EmployeeForm(navController: NavController) {
         Button(
             onClick = {
                 if (fullName.isEmpty() || dateOfBirth.isEmpty() || address.isEmpty() ||
-                    phoneNumber.isEmpty() || description.isEmpty()
+                    phoneNumber.isEmpty() || description.isEmpty()|| workField.isEmpty()
                 ) {
                     Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 } else {
@@ -212,6 +222,7 @@ fun EmployeeForm(navController: NavController) {
                             "description" to description,
                             "dateOfBirth" to dateOfBirth,
                             "address" to address,
+                            "workField" to workField,
                             "phoneNumber" to phoneNumber,
                             "resumeUri" to (resumeUri?.toString() ?: ""),
                             "role" to "Employee"

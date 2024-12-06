@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ fun EmployeeHomePage(navController: NavController, userId: String) {
     var isLoading by remember { mutableStateOf(false) }
     var recentSearches by remember { mutableStateOf<List<String>>(emptyList()) }
     val db = FirebaseFirestore.getInstance()
+    val scrollState = rememberScrollState()
 
     // Fetch recent searches when the composable launches
     LaunchedEffect(Unit) {
@@ -111,19 +113,20 @@ fun EmployeeHomePage(navController: NavController, userId: String) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
                 // Recommended Jobs Section
+                    SectionTitle("Recommended Jobs")
+                    RecommendedJobsScreen(navController, userId)
 
-                SectionTitle("Recommended Jobs")
-                RecommendedJobsScreen(navController, userId)
+                    Spacer(modifier = Modifier.height(8.dp))
 
+                    SectionTitle("Related Jobs")
+                    RelatedJobsScreen(navController, userId)
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                // All Jobs Section
-                SectionTitle("All Jobs")
-                AllJobsPosted(navController)
+                    SectionTitle("All Jobs")
+                    AllJobsPosted(navController)
+
             }
         }
     }

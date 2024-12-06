@@ -10,6 +10,7 @@ import com.example.jobmatch.employee.EditEmployeeProfile
 import com.example.jobmatch.employee.EmployeeMainScreen
 import com.example.jobmatch.employee.WorkerDetailScreen
 import com.example.jobmatch.employee.pages.ChangePassword
+import com.example.jobmatch.employee.pages.DocumentViewerScreen
 import com.example.jobmatch.employee.pages.EmployeeHomePage
 import com.example.jobmatch.employee.pages.EmployeeProfile
 import com.example.jobmatch.employee.pages.RecommendedJobsScreen
@@ -125,7 +126,7 @@ fun Navigation(){
             EditEmployerProfile(navController)
         }
         composable(Routes.logOut) {
-            LogOut(navController=navController)
+            LogOut(navController=navController,userRole)
         }
         composable(Routes.employerHomePage) { backStackEntry ->
             backStackEntry.arguments?.getString("employerId") ?: "" // Fetch employerId from arguments
@@ -156,6 +157,10 @@ fun Navigation(){
 
         composable("job_recommendations") {
             RecommendedJobsScreen(navController, userRole)
+        }
+        composable("documentViewer/{uri}") { backStackEntry ->
+            val uri = backStackEntry.arguments?.getString("uri")
+            DocumentViewerScreen(uri = uri)
         }
 
     }
