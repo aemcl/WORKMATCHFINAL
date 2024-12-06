@@ -171,32 +171,37 @@ fun JobDescription(navController: NavController, jobName: String) {
                             Spacer(modifier = Modifier.size(8.dp))
 
                             // Apply Now Button
-                            // Apply Now Button
                             Button(
                                 onClick = {
                                     val email = jobDetails.email
-                                    val subject = "Job Application: ${jobDetails.jobName}"
-                                    val body = "Dear Employer,\n\nI am interested in applying for the ${jobDetails.jobName} position. Please find my details attached.\n\nBest regards,\n[Your Name]"
+                                    if (email.isNullOrEmpty()) {
+                                        // Show error message if no email is provided
+                                        Toast.makeText(context, "No email address available for this job.", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        val subject = "Job Application: ${jobDetails.jobName}"
+                                        val body = "Dear Employer,\n\nI am interested in applying for the ${jobDetails.jobName} position. Please find my details attached.\n\nBest regards,\n[Your Name]"
 
-                                    // Create an Intent to send the email using ACTION_SEND
-                                    val emailIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "message/rfc822"
-                                        putExtra(Intent.EXTRA_EMAIL, arrayOf("youremail@example.com")) // Use a known working email address
-                                        putExtra(Intent.EXTRA_SUBJECT, "Test Email")
-                                        putExtra(Intent.EXTRA_TEXT, "This is a test email")
-                                    }
-
-                                    try {
-                                        val resolveInfo = context.packageManager.queryIntentActivities(emailIntent, 0)
-                                        if (resolveInfo.isNotEmpty()) {
-                                            context.startActivity(Intent.createChooser(emailIntent, "Choose an Email Client"))
-                                        } else {
-                                            Toast.makeText(context, "No email client found.", Toast.LENGTH_SHORT).show()
+                                        // Create an Intent to send the email using ACTION_SEND
+                                        val emailIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "message/rfc822"
+                                            putExtra(Intent.EXTRA_EMAIL, arrayOf(email)) // Use the job's email address
+                                            putExtra(Intent.EXTRA_SUBJECT, subject)
+                                            putExtra(Intent.EXTRA_TEXT, body)
                                         }
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Failed to send email: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
 
+                                        try {
+                                            // Check if there's an app available to handle the intent
+                                            val resolveInfo = context.packageManager.queryIntentActivities(emailIntent, 0)
+                                            if (resolveInfo.isNotEmpty()) {
+                                                context.startActivity(Intent.createChooser(emailIntent, "Choose an Email Client"))
+                                            } else {
+                                                Toast.makeText(context, "No email client found.", Toast.LENGTH_SHORT).show()
+                                            }
+                                        } catch (e: Exception) {
+                                            // Handle any errors during the intent process
+                                            Toast.makeText(context, "Failed to send email: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
                                 },
                                 modifier = Modifier.padding(top = 16.dp)
                             ) {
