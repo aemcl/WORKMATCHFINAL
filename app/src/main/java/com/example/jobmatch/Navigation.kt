@@ -19,10 +19,12 @@ import com.example.jobmatch.employer.EditEmployerProfile
 import com.example.jobmatch.employer.EmployerMainScreen
 import com.example.jobmatch.employer.EmployerSearch
 import com.example.jobmatch.employer.PostJob
+import com.example.jobmatch.employer.PostedJobs
 import com.example.jobmatch.employer.RecommendedWorkers
 import com.example.jobmatch.employer.pages.EmployeeProfileScreen
 import com.example.jobmatch.employer.pages.EmployerHomePage
 import com.example.jobmatch.employer.pages.EmployerProfile
+
 import com.example.jobmatch.forms.EmployeeForm
 import com.example.jobmatch.forms.EmployerForm
 import com.google.firebase.auth.FirebaseAuth
@@ -146,6 +148,11 @@ fun Navigation(){
         composable(Routes.addJob) {
             PostJob(navController)
         }
+        composable("postedJobs/{email}") { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            PostedJobs(navController = navController)
+        }
+
 
         composable("employeeMainScreen") {
             val currentUser = FirebaseAuth.getInstance().currentUser

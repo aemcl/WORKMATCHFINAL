@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -141,12 +142,31 @@ fun EmployerHomePage(navController: NavController, employerId: String) {
             }
         }
     }
+    // Floating Action Button (FAB) for viewing posted jobs
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(end = 40.dp, bottom = 200.dp),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        FloatingActionButton(
+            onClick = { navController.navigate("postedJobs/${employerId}") },
+            containerColor = Color(0xFF28a745)
+        ) {
+            Icon(
+                imageVector = Icons.Default.List,
+                contentDescription = "Posted Jobs",
+                tint = Color.White
+            )
+        }
+    }
+
 
     // Floating Action Button (FAB) for adding a job
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(end = 40.dp, bottom = 120.dp),
+            .padding(end = 40.dp, bottom = 125.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
         FloatingActionButton(
@@ -161,6 +181,7 @@ fun EmployerHomePage(navController: NavController, employerId: String) {
         }
     }
 }
+
 
 @Composable
 fun EmployeeCard(employee: Employee, onClick: (String) -> Unit) {
@@ -391,4 +412,5 @@ data class Employee(
     val phoneNumber: String = "",
     val resumeUri: String = ""
 )
+
 

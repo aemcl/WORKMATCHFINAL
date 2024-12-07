@@ -30,6 +30,7 @@ object Routes {
     const val editEmployerProfile = "Edit Employer Profile"
     fun jobDescription(jobDetails: String) = "jobDescription/$jobDetails"
     const val addJob ="Add Job"
+    const val postedJob ="Posted Jobs"
     const val jobInfo="Job Information"
     const val employeeAccount = "employeeAccount/{employeeId}"
     var recommendedJobs ="Recommended Job"
