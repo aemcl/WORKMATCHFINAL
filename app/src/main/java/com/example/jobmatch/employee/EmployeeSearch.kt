@@ -33,6 +33,7 @@ data class Job(
     val jobDescription: String = "",
     val companyName: String = ""
 )
+
 @Composable
 fun EmployeeSearchBar(navController: NavController, userRole: String) {
     var text by remember { mutableStateOf("") }
@@ -133,21 +134,24 @@ fun JobItem(job: Job, navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
+                // Navigate to the job description screen using the job name
                 navController.navigate("${Routes.jobDescription}/${job.jobName}")
             }
             .padding(16.dp)
     ) {
         Column {
             Text(
-                text = job.jobName, // Display the job name as it is
+                text = job.jobName, // Display the job name
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
             Text(
-                text = job.jobDescription, // Display the job description as it is
+                text = job.jobDescription, // Display the job description
                 fontSize = 14.sp,
                 color = Color.Gray
             )
         }
     }
 }
+
+

@@ -101,8 +101,11 @@ fun DropdownMenuWithOptions(
 @Composable
 fun SecurityQuestionDropdown(onQuestionSelect: (String) -> Unit) {
     val securityQuestions = listOf(
-        "Gwapo ko di ay ?",
-        "Asa ka ?"
+        "Favorite Pet?",
+        "Favorite Food?",
+        "Favorite Color?",
+        "Favorite Person?",
+        "Favorite Sports?"
     )
     DropdownMenuWithOptions(
         options = securityQuestions,

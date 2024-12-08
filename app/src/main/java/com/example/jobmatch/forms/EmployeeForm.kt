@@ -41,7 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
 import com.example.jobmatch.Routes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -64,7 +64,7 @@ fun EmployeeForm(navController: NavController) {
     val storage = FirebaseStorage.getInstance().reference
 
     // Launcher for profile picture
-    val profilePicLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { profilePicUri = it }
     }
 
@@ -95,12 +95,12 @@ fun EmployeeForm(navController: NavController) {
                 .size(120.dp)
                 .clip(CircleShape)
                 .background(Color.Blue)
-                .clickable { profilePicLauncher.launch("image/*") },
+                .clickable { launcher.launch("image/*") },
             contentAlignment = Alignment.Center
         ) {
             if (profilePicUri != null) {
                 Image(
-                    painter = rememberAsyncImagePainter(profilePicUri),
+                    painter = rememberImagePainter(profilePicUri),
                     contentDescription = "Profile Picture",
                     modifier = Modifier
                         .size(120.dp)
@@ -116,86 +116,121 @@ fun EmployeeForm(navController: NavController) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(modifier = Modifier.height(10.dp))
         OutlinedTextField(
             value = fullName,
             onValueChange = { fullName = it },
             label = { Text(text = "Full Name") },
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(5.dp))
 
         OutlinedTextField(
             value = dateOfBirth,
             onValueChange = { dateOfBirth = it },
             label = { Text(text = "Date of Birth") },
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(5.dp))
 
         OutlinedTextField(
             value = address,
             onValueChange = { address = it },
             label = { Text(text = "Address") },
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = workField,
-            onValueChange = { workField = it },
-            label = { Text(text = "WorkField") },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(5.dp))
 
         OutlinedTextField(
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
             label = { Text(text = "Phone Number") },
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(5.dp))
 
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text(text = "Skills") },
+            label = { Text(text = "Description") },
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp),
             maxLines = 5 // For multiline input
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(5.dp))
 
-        // Resume Section
+        OutlinedTextField(
+            value = workField,
+            onValueChange = { workField = it },
+            label = { Text(text = "Work Field") },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp),
+            maxLines = 5 // For multiline input
+        )
+
+        Spacer(modifier = Modifier.height(5.dp))
+
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(text = "Resume")
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
-            // Show the selected resume URI or a placeholder
+            // Show the selected resume filename or a placeholder
             if (resumeUri != null) {
-                Text(
-                    text = "Selected Resume: ${resumeUri.toString()}",
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
+                // Extract the filename from the URI
+                val resumeFilename = resumeUri?.lastPathSegment?.substringAfterLast("/") ?: "Unknown File"
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Selected Resume: $resumeFilename",
+                        color = Color.Black,
+                        fontSize = 14.sp
+                    )
+                }
             } else {
-                Text(text = "No resume uploaded yet.", color = Color.Gray, fontSize = 14.sp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No resume uploaded yet.",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Button(
                 onClick = { resumeLauncher.launch("application/pdf") }, // Allow only PDF files
@@ -206,18 +241,18 @@ fun EmployeeForm(navController: NavController) {
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+        // Other form fields (fullName, dateOfBirth, etc.) omitted for brevity...
 
         Button(
             onClick = {
                 if (fullName.isEmpty() || dateOfBirth.isEmpty() || address.isEmpty() ||
-                    phoneNumber.isEmpty() || description.isEmpty()|| workField.isEmpty()
+                    phoneNumber.isEmpty() || description.isEmpty() || workField.isEmpty()
                 ) {
                     Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 } else {
                     user?.uid?.let { userId ->
                         val employeeData = hashMapOf(
-                            "profilePicUri" to (profilePicUri?.toString() ?: ""),
                             "fullName" to fullName,
                             "description" to description,
                             "dateOfBirth" to dateOfBirth,
@@ -228,8 +263,20 @@ fun EmployeeForm(navController: NavController) {
                             "role" to "Employee"
                         )
 
-                        // Upload data and handle result
-                        saveEmployeeData(employeeData, userId, navController, context)
+                        // Upload profile picture if selected
+                        profilePicUri?.let { uri ->
+                            val profilePicRef = storage.child("employee_pics/$userId.jpg")
+                            profilePicRef.putFile(uri)
+                                .addOnSuccessListener {
+                                    profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                                        employeeData["profilePicUri"] = downloadUrl.toString()
+                                        saveEmployeeData(employeeData, userId, navController, context)
+                                    }
+                                }
+                                .addOnFailureListener {
+                                    saveEmployeeData(employeeData, userId, navController, context)
+                                }
+                        } ?: saveEmployeeData(employeeData, userId, navController, context)
                     }
                 }
             },
@@ -254,6 +301,7 @@ fun saveEmployeeData(employeeData: HashMap<String, String>, userId: String, navC
             Toast.makeText(context, "Failed to save data. Try again.", Toast.LENGTH_SHORT).show()
         }
 }
+
 fun markFormCompleted(userId: String, context: android.content.Context) {
     val firestore = FirebaseFirestore.getInstance()
     firestore.collection("employees").document(userId).update("formCompleted", true)
@@ -264,5 +312,6 @@ fun markFormCompleted(userId: String, context: android.content.Context) {
             Toast.makeText(context, "Failed to mark form as completed. Try again.", Toast.LENGTH_SHORT).show()
         }
 }
+
 
 

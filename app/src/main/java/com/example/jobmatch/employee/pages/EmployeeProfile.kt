@@ -1,4 +1,5 @@
 @file:Suppress("DEPRECATION")
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.jobmatch.employee.pages
 
 import android.content.Intent
@@ -26,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -46,10 +46,9 @@ import com.google.firebase.storage.StorageReference
 @Composable
 fun EmployeeProfile(navController: NavController) {
    val user = FirebaseAuth.getInstance().currentUser
-
    val db = FirebaseFirestore.getInstance()
    val storage = FirebaseStorage.getInstance().reference
-   val context = LocalContext.current
+
    var isLoading by remember { mutableStateOf(true) }
    var errorMessage by remember { mutableStateOf<String?>(null) }
    var userInfo by remember { mutableStateOf<EmployeeProfileData?>(null) }
@@ -67,16 +66,11 @@ fun EmployeeProfile(navController: NavController) {
 
    // Fetch user profile data from Firestore
    LaunchedEffect(user?.uid) {
-      if (user != null) {
-         db.collection("employees").document(user.uid).get()
+      user?.uid?.let { userId ->
+         db.collection("employees").document(userId).get()
             .addOnSuccessListener { documentSnapshot ->
                userInfo = documentSnapshot.toObject(EmployeeProfileData::class.java)
-               if (userInfo != null) {
-                  isLoading = false
-               } else {
-                  errorMessage = "Failed to load profile data."
-                  isLoading = false
-               }
+               isLoading = false
             }
             .addOnFailureListener { e ->
                Log.e("EmployeeProfile", "Error fetching user data", e)
@@ -141,10 +135,10 @@ fun EmployeeProfile(navController: NavController) {
                   shape = CircleShape
                )
                {
-                  val profilePicUrl = userInfo?.profilePicUri
-                  if (profilePicUrl != null) {
+                  val profilePicUri = userInfo?.profilePicUri
+                  if (profilePicUri != null) {
                      Image(
-                        painter = rememberImagePainter(data = profilePicUrl, builder = { crossfade(true) }),
+                        painter = rememberImagePainter(data = profilePicUri, builder = { crossfade(true) }),
                         contentDescription = "Profile Picture",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -183,14 +177,14 @@ fun EmployeeProfile(navController: NavController) {
                               imageVector = Icons.Default.Person,
                               contentDescription = "Default Profile Picture",
                               tint = Color.Gray,
-                              modifier = Modifier.size(300.dp)
+                              modifier = Modifier.size(250.dp)
                            )
                         }
                      }
                   }
                }
 
-               Spacer(modifier = Modifier.height(20.dp))
+               Spacer(modifier = Modifier.height(10.dp))
 
                userInfo?.let {
                   ProfileInfoBox(label = "Full Name", value = it.fullName)
@@ -230,7 +224,7 @@ fun EmployeeProfile(navController: NavController) {
                   ) {
                      Text(
                         text = "View Documents",
-                        fontSize = 18.sp,
+                        fontSize = 14.sp,
                         color = Color.Blue
                      )
                   }
@@ -258,7 +252,7 @@ fun EmployeeProfile(navController: NavController) {
                Button(
                   onClick = {
                      FirebaseAuth.getInstance().signOut()
-                     navController.navigate("login")
+                     navController.navigate(Routes.login)
                   },
                   modifier = Modifier.wrapContentWidth(),
                   colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
@@ -271,22 +265,7 @@ fun EmployeeProfile(navController: NavController) {
    }
 }
 
-@Composable
-fun ProfileInfoBox(label: String, value: String) {
-   Box(
-      modifier = Modifier
-         .border(BorderStroke(1.dp, Brush.horizontalGradient(listOf(Color.Gray, Color.LightGray))), CircleShape)
-         .width(250.dp)
-         .height(50.dp)
-         .padding(12.dp)
-   ) {
-      Text(
-         text = "$label: $value",
-         fontSize = 14.sp,
-         modifier = Modifier.align(Alignment.CenterStart)
-      )
-   }
-}
+
 
 @Composable
 fun DocumentDialog(uri: Uri?, onDismiss: () -> Unit, navController: NavController) {
@@ -372,7 +351,7 @@ fun uploadProfilePicture(uri: Uri, userId: String, storage: StorageReference, db
          db.collection("employees").document(userId).update("profilePicUri", downloadUrl.toString())
       }
    }.addOnFailureListener { e ->
-      Log.e("Profile", "Failed to upload profile picture", e)
+      Log.e("EmployeeProfile", "Failed to upload profile picture", e)
    }
 }
 

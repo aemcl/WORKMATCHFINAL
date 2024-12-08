@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -122,14 +123,25 @@ fun SignUp(navController: NavController) {
 
         // Terms and Conditions Checkbox
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(vertical = 8.dp)
         ) {
             Checkbox(
                 checked = checked,
                 onCheckedChange = { checked = it }
             )
-            Text("I agree to the Terms and Conditions", fontSize = 14.sp)
+            Text(text = "I agree to the", fontSize = 14.sp)
+            Spacer(modifier = Modifier.width(4.dp))
+            TextButton(onClick = { navController.navigate(Routes.termsAndConditions) }) {
+                Text(
+                    text = "Terms and Conditions",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
+                )
+            }
         }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -159,10 +171,10 @@ fun SignUp(navController: NavController) {
                                         firestore.collection("users").document(it.uid).set(userData)
                                             .addOnSuccessListener {
                                                 Toast.makeText(context, "Sign Up successful", Toast.LENGTH_SHORT).show()
-                                                if (role == "Employer") {
-                                                    navController.navigate(Routes.employerForm)
-                                                } else {
+                                                if (role == "Employee") {
                                                     navController.navigate(Routes.employeeForm)
+                                                } else {
+                                                    navController.navigate(Routes.employerForm)
                                                 }
                                             }
                                             .addOnFailureListener { e ->

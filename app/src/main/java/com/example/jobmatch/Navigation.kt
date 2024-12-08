@@ -14,7 +14,6 @@ import com.example.jobmatch.employee.pages.ChangePassword
 import com.example.jobmatch.employee.pages.DocumentViewerScreen
 import com.example.jobmatch.employee.pages.EmployeeHomePage
 import com.example.jobmatch.employee.pages.EmployeeProfile
-import com.example.jobmatch.employee.pages.RecommendedJobsScreen
 import com.example.jobmatch.employer.EditEmployerProfile
 import com.example.jobmatch.employer.EmployerMainScreen
 import com.example.jobmatch.employer.EmployerSearch
@@ -24,7 +23,6 @@ import com.example.jobmatch.employer.RecommendedWorkers
 import com.example.jobmatch.employer.pages.EmployeeProfileScreen
 import com.example.jobmatch.employer.pages.EmployerHomePage
 import com.example.jobmatch.employer.pages.EmployerProfile
-
 import com.example.jobmatch.forms.EmployeeForm
 import com.example.jobmatch.forms.EmployerForm
 import com.google.firebase.auth.FirebaseAuth
@@ -169,13 +167,22 @@ fun Navigation(){
             EmployeeProfileScreen(navController, employeeName)
         }
 
-        composable("job_recommendations") {
-            RecommendedJobsScreen(navController, userRole)
-        }
+
         composable("documentViewer/{uri}") { backStackEntry ->
             val uri = backStackEntry.arguments?.getString("uri")
             DocumentViewerScreen(uri = uri)
         }
+        composable(Routes.termsAndConditions) { // Example for job recommendations
+            TermsAndConditions(navController)
+        }
+        composable(Routes.updatePassword) { // Example for job recommendations
+            UpdatePassword(navController)
+        }
+        composable("${Routes.jobDescription}/{jobName}") { backStackEntry ->
+            val jobName = backStackEntry.arguments?.getString("jobName") ?: ""
+            JobDescription(navController = navController, jobName = jobName)
+        }
+
 
     }
 }

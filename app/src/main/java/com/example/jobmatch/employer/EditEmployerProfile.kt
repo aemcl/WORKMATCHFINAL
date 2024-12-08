@@ -138,7 +138,7 @@ fun EditEmployerProfile(navController: NavController) {
             // Save Button with Improved Error Handling
             Button(onClick = {
                 val userId = user.uid
-                val employerInfo = hashMapOf(
+                val employerInfo: MutableMap<String, Any> = mutableMapOf(
                     "companyName" to companyName,
                     "companyAddress" to companyAddress,
                     "companyType" to companyType,
@@ -146,22 +146,31 @@ fun EditEmployerProfile(navController: NavController) {
                     "companyWorkField" to companyWorkField
                 )
 
+                // Check if a new profile picture was uploaded
                 profilePictureUri?.let { uri ->
                     val profilePicRef = storage.child("employer_pics/$userId.jpg")
-                    profilePicRef.putFile(uri).addOnSuccessListener {
-                        profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                            employerInfo["profilePictureUrl"] = downloadUrl.toString()
-                            saveEmployerData(db, userId, employerInfo, navController)
+                    profilePicRef.putFile(uri)
+                        .addOnSuccessListener {
+                            profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                                employerInfo["profilePictureUrl"] = downloadUrl.toString()
+                                saveEmployerData(db, userId, employerInfo, navController)
+                            }
                         }
-                    }.addOnFailureListener { e ->
-                        Log.e("EditEmployerProfile", "Error uploading profile picture", e)
-                        // Save data without profile picture update if upload fails
-                        saveEmployerData(db, userId, employerInfo, navController)
+                        .addOnFailureListener { e ->
+                            Log.e("EditEmployerProfile", "Error uploading profile picture", e)
+                            saveEmployerData(db, userId, employerInfo, navController) // Save without new picture
+                        }
+                } ?: run {
+                    // Reuse existing profile picture URL if no new picture is uploaded
+                    if (profilePictureUrl.isNotEmpty()) {
+                        employerInfo["profilePictureUrl"] = profilePictureUrl
                     }
-                } ?: saveEmployerData(db, userId, employerInfo, navController) // Save without new picture
+                    saveEmployerData(db, userId, employerInfo, navController)
+                }
             }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
                 Text(text = "Save Changes")
             }
+
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -178,15 +187,23 @@ fun EditEmployerProfile(navController: NavController) {
 }
 
 // Ensure proper error handling in this helper function
-fun saveEmployerData(db: FirebaseFirestore, userId: String, employerInfo: Map<String, Any>, navController: NavController) {
+fun saveEmployerData(
+    db: FirebaseFirestore,
+    userId: String,
+    employerInfo: MutableMap<String, Any>,
+    navController: NavController
+) {
+    // Attempt to save employer info
     db.collection("employers").document(userId).set(employerInfo)
         .addOnSuccessListener {
-            navController.popBackStack()  // Navigate back safely
+            Log.d("EditEmployerProfile", "Employer data saved successfully.")
+            navController.popBackStack() // Navigate back to the previous screen
         }
         .addOnFailureListener { e ->
             Log.e("EditEmployerProfile", "Error saving employer data", e)
         }
 }
+
 
 // Custom reusable TextField
 @Composable

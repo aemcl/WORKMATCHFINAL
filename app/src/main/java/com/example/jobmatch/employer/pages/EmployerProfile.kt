@@ -235,8 +235,8 @@ fun ProfileInfoBox(label: String, value: String) {
         modifier = Modifier
             .border(BorderStroke(1.dp, Brush.horizontalGradient(listOf(Color.Gray, Color.LightGray))), CircleShape)
             .fillMaxWidth()  // Make the box take up the full width
-            .height(60.dp)  // Adjust the height if needed
-            .padding(16.dp)  // Increase padding for better spacing
+            .height(45.dp)  // Reduced the height for a smaller box
+            .padding(12.dp)  // Adjusted padding for better spacing
     ) {
         Text(
             text = "$label: $value",
@@ -245,6 +245,7 @@ fun ProfileInfoBox(label: String, value: String) {
         )
     }
 }
+
 
 
 data class CompanyInfo(

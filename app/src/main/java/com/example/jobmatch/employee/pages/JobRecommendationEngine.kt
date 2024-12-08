@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -14,18 +13,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.accompanist.pager.*
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -243,127 +234,3 @@ class JobRepository {
     }
 }
 
-@OptIn(ExperimentalPagerApi::class)
-@Composable
-fun RecommendedJobsScreen(navController: NavController, userId: String) {
-    val db = FirebaseFirestore.getInstance()
-    var jobs by remember { mutableStateOf<List<Job>>(emptyList()) }
-    var userProfile by remember { mutableStateOf<EmployeeProfileData?>(null) }
-
-    // Fetch jobs and user profile
-    LaunchedEffect(userId) {
-        val jobRepository = JobRepository()
-        jobs = jobRepository.getJobs()
-        userProfile = jobRepository.getEmployeeProfile(userId)
-    }
-
-    // When jobs and user profile are ready
-    when {
-        jobs.isNotEmpty() && userProfile != null -> {
-            val recommendedJobs = recommendJobs(userProfile!!, jobs)
-
-            Column(
-                modifier = Modifier.wrapContentHeight() // Content wraps height without extra space
-            ) {
-                // Horizontal Pager for carousel
-                val pagerState = rememberPagerState()
-
-                HorizontalPager(
-                    count = recommendedJobs.size,
-                    state = pagerState,
-                    modifier = Modifier
-                        .height(150.dp) // Adjust height to fit carousel snugly
-                ) { pageIndex ->
-                    val job = recommendedJobs[pageIndex]
-                    JobItem(job, navController)
-                }
-
-                // Pager Indicator
-                HorizontalPagerIndicator(
-                    pagerState = pagerState,
-                    modifier = Modifier.align(Alignment.CenterHorizontally), // Center indicator below carousel
-                    activeColor = MaterialTheme.colorScheme.primary,
-                    inactiveColor = Color.Gray
-                )
-            }
-        }
-        jobs.isEmpty() -> Text(
-            text = "No jobs available",
-            modifier = Modifier.wrapContentHeight(),
-            style = MaterialTheme.typography.bodyLarge
-        )
-        userProfile == null -> Text(
-            text = "Loading profile...",
-            modifier = Modifier.wrapContentHeight(),
-            style = MaterialTheme.typography.bodyLarge
-        )
-        else -> Text(
-            text = "Loading...",
-            modifier = Modifier.wrapContentHeight(),
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-
-
-@OptIn(ExperimentalPagerApi::class)
-@Composable
-fun RelatedJobsScreen(navController: NavController, userId: String) {
-    val db = FirebaseFirestore.getInstance()
-    var jobs by remember { mutableStateOf<List<Job>>(emptyList()) }
-    var userProfile by remember { mutableStateOf<EmployeeProfileData?>(null) }
-
-    // Fetch jobs and user profile
-    LaunchedEffect(userId) {
-        val jobRepository = JobRepository()
-        jobs = jobRepository.getJobs()
-        userProfile = jobRepository.getEmployeeProfile(userId)
-    }
-
-    // When jobs and user profile are ready
-    when {
-        jobs.isNotEmpty() && userProfile != null -> {
-            val relatedJobs = relatedJobs(userProfile!!, jobs)
-
-            Column(
-                modifier = Modifier.wrapContentHeight() // Adjust height to content without extra padding
-            ) {
-                // Horizontal Pager for carousel
-                val pagerState = rememberPagerState()
-
-                HorizontalPager(
-                    count = relatedJobs.size,
-                    state = pagerState,
-                    modifier = Modifier
-                        .height(150.dp) // Compact height for carousel
-                ) { pageIndex ->
-                    val job = relatedJobs[pageIndex]
-                    JobItem(job, navController)
-                }
-
-                // Pager Indicator
-                HorizontalPagerIndicator(
-                    pagerState = pagerState,
-                    modifier = Modifier.align(Alignment.CenterHorizontally), // Center indicator below carousel
-                    activeColor = MaterialTheme.colorScheme.primary,
-                    inactiveColor = Color.Gray
-                )
-            }
-        }
-        jobs.isEmpty() -> Text(
-            text = "No jobs available",
-            modifier = Modifier.wrapContentHeight(), // Compactly wrap height
-            style = MaterialTheme.typography.bodyLarge
-        )
-        userProfile == null -> Text(
-            text = "Loading profile...",
-            modifier = Modifier.wrapContentHeight(), // Compactly wrap height
-            style = MaterialTheme.typography.bodyLarge
-        )
-        else -> Text(
-            text = "Loading...",
-            modifier = Modifier.wrapContentHeight(), // Compactly wrap height
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}

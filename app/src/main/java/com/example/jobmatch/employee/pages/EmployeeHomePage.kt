@@ -18,6 +18,8 @@ import androidx.navigation.NavController
 import com.example.jobmatch.Routes
 import com.example.jobmatch.employee.AllJobsPosted
 import com.example.jobmatch.employee.EmployeeSearchBar
+import com.example.jobmatch.employee.RecommendedJobsScreen
+import com.example.jobmatch.employee.RelatedJobsScreen
 import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)

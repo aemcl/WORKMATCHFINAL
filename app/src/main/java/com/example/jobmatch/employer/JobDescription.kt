@@ -57,6 +57,7 @@ fun JobDescription(navController: NavController, jobName: String) {
         job = jobRepository.getJobs().firstOrNull { it.jobName == jobName } // Find job by jobName
     }
 
+
     Scaffold(
         topBar = {
             TopAppBar(

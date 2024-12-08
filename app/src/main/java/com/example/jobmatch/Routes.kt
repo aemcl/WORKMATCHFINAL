@@ -8,18 +8,17 @@ object Routes {
     const val changepass = "changepass"
     const val employerSearch = "Employer search"
     const val signup = "signup"
-    const val createProfile = "createProfile"
+
     const val employerMainScreen = "employerMainScreen"
     const val employeeMainScreen = "employeeMainScreen"
-    const val workInformation = "workInformation"
-    const val jobCredentials = "jobCredentials"
+
+
     const val recoWorkers = "recommendedWorkers"
-    const val newMessage = "newMessage"
     const val employeeForm = "employeeForm"
     const val employerForm = "employerForm"
-    const val fullProfilePicture = "full_profile_picture"
 
-    const val jobOffer = "jobOffer"
+
+
     const val employeeHomePage = "employeeHome"
     const val employerHomePage ="EmployerHome"
     const val jobDescription = "jobDescription"
@@ -28,11 +27,8 @@ object Routes {
     const val employerProfile = "Employer Profile"
     const val editEmployeeProfile = "Edit Employee Profile"
     const val editEmployerProfile = "Edit Employer Profile"
-    fun jobDescription(jobDetails: String) = "jobDescription/$jobDetails"
     const val addJob ="Add Job"
-    const val postedJob ="Posted Jobs"
-    const val jobInfo="Job Information"
-    const val employeeAccount = "employeeAccount/{employeeId}"
-    var recommendedJobs ="Recommended Job"
+    const val termsAndConditions ="Terms and Conditions"
+    const val updatePassword ="Update Pssword"
 
 }

@@ -17,12 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,14 +50,12 @@ fun EditEmployeeProfile(navController: NavController) {
     var profilePicUri by remember { mutableStateOf<Uri?>(null) }
     var resumeUri by remember { mutableStateOf<Uri?>(null) }
 
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { profilePicUri = it }
+    }
     val resumePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         resumeUri = uri
         Log.d("EditEmployeeProfile", "Selected Resume URI: $resumeUri")
-    }
-
-    // Profile Picture Picker
-    val profilePicPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        profilePicUri = uri
     }
 
     // Load current data into fields
@@ -94,16 +87,16 @@ fun EditEmployeeProfile(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = "Edit Employee Profile", fontSize = 24.sp, color = Color.Black)
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(15.dp))
 
             // Profile Picture
             Box(
                 modifier = Modifier
                     .size(120.dp)
-                    .clickable { profilePicPicker.launch("image/*") },
+                    .clickable { launcher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (profilePicUri != null) {
+                if (profilePicUri != null && profilePicUri.toString().isNotEmpty()) {
                     Image(
                         painter = rememberAsyncImagePainter(profilePicUri),
                         contentDescription = "Profile Picture",
@@ -119,7 +112,7 @@ fun EditEmployeeProfile(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             CustomTextField(value = fullName, onValueChange = { fullName = it }, label = "Full Name")
             CustomTextField(value = description, onValueChange = { description = it }, label = "Description")
@@ -140,19 +133,23 @@ fun EditEmployeeProfile(navController: NavController) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = resumeUri?.lastPathSegment ?: "Upload Resume",
+                    text = if (resumeUri != null && resumeUri.toString().isNotEmpty()) {
+                        resumeUri?.lastPathSegment ?: "Upload Resume"
+                    } else {
+                        "Upload Resume"
+                    },
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Save Button
-            Button(onClick = {
-                user?.uid?.let { userId ->
-                    val employeeInfo: MutableMap<String, Any> =
-                        hashMapOf(
+            Button(
+                onClick = {
+                    user?.uid?.let { userId ->
+                        val employeeInfo: MutableMap<String, Any> = hashMapOf(
                             "fullName" to fullName,
                             "address" to address,
                             "phoneNumber" to phoneNumber,
@@ -161,66 +158,82 @@ fun EditEmployeeProfile(navController: NavController) {
                             "dateOfBirth" to dateOfBirth,
                         )
 
-                    // Handle resume upload and profile picture upload with error handling
-                    val tasks: MutableList<Task<*>> = mutableListOf()
+                        // Handle resume upload and profile picture upload with error handling
+                        val tasks: MutableList<Task<*>> = mutableListOf()
 
-                    resumeUri?.let { uri ->
-                        val resumeRef = storage.child("employee_resumes/$userId.pdf")
-                        val uploadTask = resumeRef.putFile(uri)
+                        resumeUri?.let { uri ->
+                            val resumeRef = storage.child("employee_resumes/$userId.pdf")
+                            val uploadTask = resumeRef.putFile(uri)
 
-                        // Add a listener to handle the upload completion
-                        uploadTask.addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                resumeRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                                    employeeInfo["resumeUri"] = downloadUrl.toString()
-                                }.addOnFailureListener { e ->
-                                    Log.e("EditEmployeeProfile", "Error getting download URL for resume", e)
+                            uploadTask.addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    resumeRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                                        employeeInfo["resumeUri"] = downloadUrl.toString()
+                                    }.addOnFailureListener { e ->
+                                        Log.e("EditEmployeeProfile", "Error getting download URL for resume", e)
+                                    }
+                                } else {
+                                    Log.e("EditEmployeeProfile", "Error uploading resume", task.exception!!)
                                 }
-                            } else {
-                                Log.e("EditEmployeeProfile", "Error uploading resume", task.exception!!)
                             }
+                            tasks.add(uploadTask)
                         }
-                        tasks.add(uploadTask) // Add the upload task to the list
-                    }
 
-                    profilePicUri?.let { uri ->
-                        val profilePicRef = storage.child("employee_pics/$userId.jpg")
-                        val uploadTask = profilePicRef.putFile(uri)
+                        profilePicUri?.let { uri ->
+                            val profilePicRef = storage.child("employee_pics/$userId.jpg")
+                            val uploadTask = profilePicRef.putFile(uri)
 
-                        // Add a listener to handle the upload completion
-                        uploadTask.addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
-                                    employeeInfo["profilePicUri"] = downloadUrl.toString()
-                                }.addOnFailureListener { e ->
-                                    Log.e("EditEmployeeProfile", "Error getting download URL for profile picture", e)
+                            uploadTask.addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                                        employeeInfo["profilePicUri"] = downloadUrl.toString()
+                                    }.addOnFailureListener { e ->
+                                        Log.e("EditEmployeeProfile", "Error getting download URL for profile picture", e)
+                                    }
+                                } else {
+                                    Log.e("EditEmployeeProfile", "Error uploading profile picture", task.exception!!)
                                 }
-                            } else {
-                                Log.e("EditEmployeeProfile", "Error uploading profile picture", task.exception!!)
                             }
+                            tasks.add(uploadTask)
                         }
-                        tasks.add(uploadTask) // Add the upload task to the list
-                    }
 
-                    // Wait for all uploads to complete before saving data
-                    Tasks.whenAllComplete(tasks).addOnCompleteListener {
-                        saveEmployeeData(db, userId, employeeInfo, navController)
+                        Tasks.whenAllComplete(tasks).addOnCompleteListener {
+                            saveEmployeeData(db, userId, employeeInfo, navController)
+                        }
                     }
-                }
-            }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                Text(text = "Save Changes")
+                },
+                modifier = Modifier
+                    .wrapContentWidth() // Adjusts width to fit the text
+                    .height(40.dp) // Consistent height
+            ) {
+                Text(
+                    text = "Save Changes",
+                    fontSize = 14.sp, // Adjust text size if needed
+                    modifier = Modifier.padding(horizontal = 16.dp) // Adds padding for visual comfort
+                )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Cancel Button
             Button(
                 onClick = { navController.navigateUp() },
-                colors = ButtonDefaults.buttonColors(containerColor= Color.Gray),
-                modifier=Modifier.fillMaxWidth().height(50.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                modifier = Modifier
+                    .wrapContentWidth() // Dynamically adjusts to the text width
+                    .height(40.dp)
             ) {
-                Text(text="Cancel")
+                Text(
+                    text = "Cancel",
+                    fontSize = 14.sp, // Small and readable font size
+                    maxLines = 1, // Ensures the text stays on one line
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(horizontal = 12.dp) // Padding to ensure proper spacing
+                )
             }
+
+
         }
     }
 }
@@ -246,10 +259,18 @@ fun CustomTextField(
     label: String
 ) {
     OutlinedTextField(
-        value=value,
-        onValueChange=onValueChange,
-        label={ Text(label) },
-        modifier=Modifier.padding(vertical=8.dp).fillMaxWidth()
+        value = value,
+        onValueChange = onValueChange,
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp) // Adjust the label font size
+            )
+        },
+        textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp), // Adjust the input text font size
+        modifier = Modifier
+            .padding(vertical = 5.dp)
+            .fillMaxWidth()
+            .height(56.dp) // Adjust the height as needed
     )
 }
-
